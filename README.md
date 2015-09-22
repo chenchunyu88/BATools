@@ -36,4 +36,7 @@ A quick introduction: `vignette("BATools")`
 
 3) implement multi-core computation
 
+4) write complete testing code
+
+
 
