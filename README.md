@@ -18,10 +18,10 @@ steps (recommended: use Rstudio to run this):
 A quick introduction: `vignette("BATools")`
 
 ###Current working models:
-- 1) rrBLUP based on REML and MCMC
-- 2) BayesA based on EM and MCMC
-- 3) BayesC based on REML and MCMC
-- 4) BayesB based on MCMC
+- rrBLUP based on REML and MCMC
+- BayesA based on EM and MCMC
+- BayesC based on EM and MCMC
+- BayesB based on MCMC
 
 ###Future commits:
 1) ONGOING: 
