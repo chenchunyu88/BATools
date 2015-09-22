@@ -1,0 +1,207 @@
+---
+title: "BATools: An R Package for Whole Genomic Analysis with Bayesian Models"
+author: "Chunyu Chen, Lei Zhou, Robert J. Tempelman"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+The package `BATools` is used to perform genome-wide association using a various Bayesian models. It is a implemented using both Markov Chain Monte Carlo (MCMC) and expectation maximization (EM) algorithm.
+
+The basic functions in `BATools` is `bafit`, which fits a genomic selection model using different prior selection. The main characteristic of this package are: 
+
+- Fit model with different prior specification including the Antedependence model
+- Flexibility to choose between MCMC and EM algorithm, both of which are able to estimate the hyperparameters
+- Accepts `gpData` objects from package `synbreed` as input data. It can also use `numeric` and `matrix` as input 
+- It is computationally efficient
+- GWA using EM BayesA/C (under development)
+
+
+## 1. Introduction
+ 
+Whole genome prediction (WGP) is an evolutionary development in animal breeding. Currently, many models have been developed for WGP, which included rrBLUP, BayesA, BayesB, BayesC, Bayesian Lasso, Antedepedence BayesA/B (Meuwissen et al. 2001, VanRaden 2008, de los Campos et al. 2009, Habier et al. 2011, and Yang and Tempelman 2012). The major difference of these models are different prior assumptions on marker effects. Software packages like `BGLR` and `GenSel` implement BayesA, BayesB and Bayes Lasso model using MCMC algorithm. No public software is available to implement Antedependence models. At the same time, no R package is available for implement BayesA/C using EM algorithm for animal breeding. `BATools` package provides tools to fit Antedependence models in addition to some of the most popular models and provider faster EM algorithms to fit the model. The table below is a comparison between `BATools` and `BGLR`: 
+
+
+Model/Algorithms | MCMC                   |  EM
+---------------- |------------------------| --------------------
+rrBLUP           | BATools/BGLR           |              BATools
+BayesA           | BATools/BGLR           |              BATools
+BayesB           | BATools/BGLR           |    under development
+BayesC           | BATools/BGLR           |              BATools
+Bayesian Lasso   | BATools/BGLR           |    under development 
+AnteBayesA       | BATools                |    under development
+AnteBayesB       | BATools                |    under development
+
+
+## 2. Basic Model
+The basic model used by `BATools` is:
+$$
+\boldsymbol{y} = \boldsymbol{X}\cdot \boldsymbol{b}+\boldsymbol{Z} \cdot \boldsymbol{g} + \boldsymbol{e},
+$$
+where:
+
+- $\boldsymbol{y}$ is the vector of response variables
+- $\boldsymbol{X}\cdot \boldsymbol{b}$ models the fixed effects
+- $\boldsymbol{g}$ is the SNP marker effect and $\boldsymbol{Z}$ is corresponding genotype matrix of $n \cdot m$
+- $\boldsymbol{e}$ are the vector of effects residual, $\boldsymbol{e} \sim N\left ( \boldsymbol{0},\boldsymbol{I}\sigma_{e}^{2}  \right )$
+
+Notice that for different models, the priors on $\boldsymbol{g}_i$ are different:
+
+- rrBLUP: $\boldsymbol{g}_j\sim N\left ( \boldsymbol{0},\boldsymbol{I}\sigma_{g}^{2}  \right )$
+
+- BayesA: $\boldsymbol{g}_j\sim N\left ( \boldsymbol{0},\boldsymbol{D}\sigma_{g}^{2}  \right )$, where $\boldsymbol{D}=\{ \tau_1,\tau_2, ...,\tau_m \}$ and $\tau_j \sim \chi^{-2}\left( \nu_g,\nu_g \right)$
+
+- BayesB: $\boldsymbol{g}_j\sim N\left ( \boldsymbol{0},\boldsymbol{D}\sigma_{g}^{2}  \right )$, where $\boldsymbol{D}=\{ \tau_1,\tau_2, ...,\tau_m \}$ and 
+$$\tau_j=\{\begin{array}
+{rrr}
+0  & \mbox{with probability} & \pi \\
+{\sim \chi^{-2}\left( \nu_g,\nu_g \right)} & \mbox{with probability} & 1-\pi
+\end{array}$$
+
+- BayesC: $\boldsymbol{g}_i\sim N\left ( \boldsymbol{0},\boldsymbol{D}\sigma_{g}^{2}  \right )$, where $\boldsymbol{D}=\{ \tau_1+\frac{1-\tau_1}{c},\tau_2+\frac{1-\tau_2}{c}, ...,\tau_m+\frac{1-\tau_m}{c}\}$ and $\tau_j\sim Bernoulli(\pi)$, $\tau_j=0,1$
+- Bayesian Lasso: $\boldsymbol{g}_j\sim N\left ( \boldsymbol{0},\boldsymbol{D}\sigma_{g}^{2}  \right )$, where $\boldsymbol{D}=\{ \tau_1,\tau_2, ...,\tau_m \}$ and $\tau_j \sim Exp\left( \lambda^{2} \right)$
+
+Furthermore, the Antedepedence models specify correlation structure for $\boldsymbol{g}$ based on the relative physical location of SNP markers along the chromosome : $$g_j=\{\begin{array}
+{rrr}
+\delta_j  & \mbox{if} & j=1 \\
+t_{j,j-1}\delta_{j-1}+\delta_j & \mbox{if} & 2\leq j \leq m
+\end{array}
+$$ 
+where 
+$t_{j,j-1}\sim N\left ( \mu_t,\sigma^2_t  \right )$
+
+
+
+## 3. BATools example
+
+In `BATools`, we adhered the data structure of the object `gpData` in the `synbreed` package. The input and output objects are named as `baData` and `BAout`, which are R object class `list`. Therefore, users can directly use `synbreed` object as the input for `BATools`, and vice versa. More detailed explanation about `baData` and `BAout` can be found in the package manual file. 
+
+##Example
+We will use a toy dataset from the MSUPRP population to illustrate the use of `BATools`
+
+###Load packages and data 
+```{r}
+library(BATools)
+data("MSUPRP_sample")
+summary(MSUPRP_sample)
+```
+
+Then we can create the data object used in `BATools` by `create.baData`. In this example we treat the sex as fixed effects
+```{r}
+pheno<-data.frame(MSUPRP_sample$pheno[,,]) 
+geno<-MSUPRP_sample$geno[,1:500]
+ped<-MSUPRP_sample$pedigree
+map=MSUPRP_sample$map
+sex<-ped$sex
+sex<-as.factor(sex)
+x<-model.matrix( ~ sex -1,contrasts.arg=list(sex=contrasts(sex, contrasts=F)))
+colnames(x)<-c("female","male")
+rownames(x)<-ped$ID
+pig=create.baData(pheno=pheno,geno=geno,map=map,pedigree=ped,fixed=x,makeAinv=F)
+```
+
+###Set up initial values for the model
+We choose to demonstrate how to fit BayesA using MCMC and EM. We start with MCMC:
+```{r}
+init=list(df=5,scale=0.01,pi=1)
+run_para=list(niter=5000,burnIn=2500,skip=10)
+print_mcmc=list(piter=500)
+update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
+op<-create.options(model="BayesA",method="MCMC",ante=FALSE,priors=NULL,init=init,
+  update_para=update_para,run_para=run_para,save.at="BayesA",cv=NULL,print_mcmc=print_mcmc)
+```
+
+###Fit the model
+We then fit the model using MCMC for the trait `driploss` with the above setups:
+```{r}
+ba<-bafit(dataobj=pig,op=op,trait="driploss")
+ba
+```
+
+###Graphics
+
+
+We can obtain the traceplot for MCMC:
+```{r fig.cap="Traceplot"}
+par(mar=c(2,2,2,2))
+baplot(dataobj=pig,BAout=ba,type="trace",op=op)
+```
+
+###EM algorithm
+To use the EM algorithm in `BATools`, we first run an analysis using rrBLUP:
+```{r fig.cap="rrBLUP Estimation"}
+##################run rrBLUP REML#####################
+init=list(df=NULL,scale=NULL,vare=NULL)
+run_para=list(maxiter=100)
+update_para=list(df=FALSE,scale=TRUE)
+op<-create.options(model="rrBLUP",method="EM",ante=FALSE,priors=NULL,init=init,
+    update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
+
+rr<-bafit(dataobj=pig,op=op,trait="driploss")
+rr
+```
+Then we use rrBLUP results as starting values for EM BayesA:
+```{r fig.cap="EM Estimation"}
+df_i=5
+scale_i=(df_i-2)/df_i*rr$hyper_est[2]
+init=list(df=df_i,scale=scale_i,vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,pi=1)
+run_para=list(maxiter=100)
+update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
+op<-create.options(model="BayesA",method="EM",ante=FALSE,priors=NULL,init=init,D="V",
+    update_para=update_para,run_para=run_para,save.at="BayesA",cv=NULL,print_mcmc=NULL)
+ba_em<-bafit(dataobj=pig,op=op,trait="driploss")
+ba_em
+```
+###Graphics
+Let's look at the estimated phenotypes v.s. true phenotypes for EM:
+
+We can also compare the difference bewteen MCMC and EM:
+```{r fig.cap=""}
+plot(ba$ghat,ba_em$ghat,xlab="MCMC",ylab="EM",main="BayesA MCMC v.s. EM")
+abline(a=0,b=1)
+```
+
+###BayesC
+Running BayesC is similar to running BayesA:
+```{r fig.cap="BayesC"}
+init=list(df=5,scale=0.2,pi=0.1,c=1000)
+run_para=list(niter=2000,burnIn=1000,skip=1)
+print_mcmc=list(piter=200)
+update_para=list(df=F,scale=T,pi=T)
+priors=list(shape_scale=5,rate_scale=0.1,alphapi=1,betapi=9)
+op<-create.options(model="BayesC",method="MCMC",
+ante=FALSE,priors=NULL,init=init,update_para=update_para,
+run_para=run_para,save.at="BayesCC",cv=NULL,print_mcmc=print_mcmc)
+bc<-bafit(dataobj=pig,op=op,trait="driploss")
+bc
+scale_i=rr$hyper_est[2]/(1/1000*rr$hyper_est[2]*(1-bc$hyper_est[3])+bc$hyper_est[3]*rr$hyper_est[2])
+init=list(df=5,scale=scale_i,vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,pi=bc$hyper_est[3],c=1000)
+run_para=list(maxiter=100)
+update_para=list(df=FALSE,scale=TRUE,pi=T)
+op<-create.options(model="BayesC",method="EM",ante=FALSE,priors=NULL,init=init,
+    update_para=update_para,run_para=run_para,save.at="BayesC",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
+bc_em<-bafit(dataobj=pig,op=op,trait="driploss")
+bc_em
+```
+
+We can also compare the difference bewteen MCMC and EM for BayesC:
+```{r fig.cap="BayesC"}
+plot(bc$ghat,bc_em$ghat,xlab="MCMC",ylab="EM",main="BayesC MCMC v.s. EM")
+abline(a=0,b=1)
+```
+
+We can also compare the difference bewteen BayesA and BayesC for MCMC:
+```{r fig.cap="BayesA_C_MCMC"}
+plot(ba$ghat,bc$ghat,xlab="BayesA",ylab="BayesC",main="BayesA v.s. BayesC in MCMC")
+abline(a=0,b=1)
+```
+
+We can also compare the difference bewteen BayesA and BayesC for EM:
+```{r fig.cap="BayesA_C_EM"}
+plot(ba$ghat,bc$ghat,xlab="BayesA",ylab="BayesC",main="BayesA v.s. BayesC in EM")
+abline(a=0,b=1)
+```
