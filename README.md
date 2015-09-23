@@ -15,7 +15,13 @@ steps (recommended: use Rstudio to run this):
 
 `devtools::install_github("chenchunyu88/BATools",build_vignettes=T)`
 
+Or, you can download it as an .zip file and use `R CMD INSTALL BATools` to install it in the command line.
+
 A quick introduction: `vignette("BATools")`
+
+Help can be accessed by typing: `help(BATools)`, `help(bafit)`
+
+Example codes can be obtained by typing: `demo(vignette_demo)` and it's located in the demo folder
 
 ###Current working models:
 - rrBLUP based on REML and MCMC
