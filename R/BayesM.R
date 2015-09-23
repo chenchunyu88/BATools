@@ -1,5 +1,5 @@
 #dataobj=pig;op=op;y=NULL;Z=NULL;yNa=NULL;trait="driploss"
-BayesM = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,trait=NULL,yNa=NULL) 
+BayesM = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL,yNa=NULL) 
 #  startpi is defined by the proportion of markers that ARE associate with genes
 {   # START OF FUNCTION
 	pi_math = 3.14159265359	
@@ -61,7 +61,7 @@ BayesM = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,trait=NULL,yNa=NULL)
 		X=X[-whichNa,]
 	}
 	}else{
-		X = array(1,nrecords)
+	  X = matrix(1,length(y),1)
 		dimX = 1
 	}
 	

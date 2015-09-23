@@ -95,9 +95,9 @@ bafit <- function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL){
 	if(op$model=="rrBLUP"){
 		if(op$method=="MCMC")
 		{
-			res<-BayesM(dataobj,op,y,Z,X=X,trait)
+			res<-BayesM(dataobj,op,y,Z,X=X,trait=trait)
 		}else{
-			res<-BayesE(dataobj,op,y,Z,X,trait=trait)	
+			res<-BayesE(dataobj,op,y,Z,X=X,trait=trait)	
 			
 		}
 	}
