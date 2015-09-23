@@ -1,5 +1,5 @@
-\name{BATools-package}
-\alias{BATools-package}
+\name{BATools}
+\alias{BATools}
 \docType{package}
 \title{
 BATools
@@ -11,7 +11,7 @@ BATools is an R Package for Whole Genomic Analysis with Bayesian Models
 \tabular{ll}{
 Package: \tab BATools\cr
 Type: \tab Package\cr
-Version: \tab 0.1.0\cr
+Version: \tab 1.0.0\cr
 Date: \tab 2015-09-22\cr
 License: \tab GPL-3 \cr
 }

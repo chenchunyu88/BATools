@@ -1,6 +1,23 @@
-# summary function for bayesian model
+#' Plot the results for the Bayesian models
 #'  @title plot result for bafit
 #'  @export
+#'  @param dataobj \code{baData} object 
+#'  @param BAout \code{BAout} object contains all the output of the Bayesian model
+#'  @param y \code{numeric} vector of phenotypes
+#'  @param Z \code{matrix} of genotypes
+#'  @param yNa \code{numeric} vector of phenotypes used in cross validation
+#'  @param type
+#'  \code{string} defines the type of the plot, which can be "pre","man","trace"
+#'  \tabular{ll}{
+#'    \tab \code{"pre"}  plot the predicted value against the true value\cr
+#'    \tab \code{"man"}  Manhattan plot  \cr
+#'    \tab \code{"trace"}  Traceplot \cr
+#'  }
+#'  @param op \code{op} object created by create.options that is used for the analysis
+#'  @details You can either provide \code{baData} or y and Z for this function. If they're provided at the same time, \code{dataobj} will be used for the analysis
+#' @examples 
+#' baplot(dataobj=pig,BAout=ba,type="pre")
+#' baplot(dataobj=pig,BAout=ba,type="trace",op=op)
 baplot <- function(dataobj=NULL,BAout=NULL,y=NULL,Z=NULL,yNa=NULL,type=NULL,op=NULL){
 	if(is.null(BAout)) stop("BAout must be provided for the function")
 	plot_types=c("pre","man","trace")

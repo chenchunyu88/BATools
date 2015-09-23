@@ -7,7 +7,34 @@
 baplot(dataobj = NULL, BAout = NULL, y = NULL, Z = NULL, yNa = NULL,
   type = NULL, op = NULL)
 }
-\description{
+\arguments{
+\item{dataobj}{\code{baData} object}
 
+\item{BAout}{\code{BAout} object contains all the output of the Bayesian model}
+
+\item{y}{\code{numeric} vector of phenotypes}
+
+\item{Z}{\code{matrix} of genotypes}
+
+\item{yNa}{\code{numeric} vector of phenotypes used in cross validation}
+
+\item{type}{\code{string} defines the type of the plot, which can be "pre","man","trace"
+\tabular{ll}{
+  \tab \code{"pre"}  plot the predicted value against the true value\cr
+  \tab \code{"man"}  Manhattan plot  \cr
+  \tab \code{"trace"}  Traceplot \cr
+}}
+
+\item{op}{\code{op} object created by create.options that is used for the analysis}
+}
+\description{
+Plot the results for the Bayesian models
+}
+\details{
+You can either provide \code{baData} or y and Z for this function. If they're provided at the same time, \code{dataobj} will be used for the analysis
+}
+\examples{
+baplot(dataobj=pig,BAout=ba,type="pre")
+baplot(dataobj=pig,BAout=ba,type="trace",op=op)
 }
 

@@ -38,6 +38,7 @@ sex<-as.factor(sex)
 x<-model.matrix( ~ sex -1,contrasts.arg=list(sex=contrasts(sex, contrasts=F)))
 colnames(x)<-c("female","male")
 rownames(x)<-ped$ID
+pig=create.baData(pheno=pheno,geno=geno,map=map,pedigree=ped,fixed=x,makeAinv=F)
 ######################BayesA####################
 ##############Setting up options################
 init=list(df=5,scale=0.01,pi=1)

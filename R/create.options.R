@@ -1,6 +1,82 @@
-# create object for options of bayesian model
+#' Create object for options of bayesian model
 #'  @export
 #'  @title create \code{\link{op}} object
+#'  @param  model string indicate the model for the analysis, \code{model} can be "GBLUP","BayesA", or "BayesB"
+#'  @param method string indicate the method for the analysis, \code{model} can be "MCMC" or "EM"
+#'  @param ante logical, must be \code{TRUE} or \code{FALSE}
+#'  @param priors \code{list} contains priors for the Bayesian model, elements in \code{priors} can be "nu_e","tau2_e",\cr"shape_scale","rate_scale","cdef","alphapi","betapi","mu_m_t","sigma2_m_t",\cr
+#'  "df_var_t","scale_var_t"
+#'  
+#'  \code{nu_e}    \code{numeric}, prior degrees of freedom for residual variance, default value -1\cr
+#'  \code{tau2_e}   \code{numeric},  prior scale for residual variance,default value 0  \cr
+#'  \code{shape_scale}  \code{numeric},  prior shape for scale parameter, default value 0.1 \cr
+#'  \code{rate_scale}    \code{numeric},  prior rate for scale parameter, default value 0.1 \cr 
+#'  \code{cdef}   \code{numeric},  cdef is scale parameter for proposal density on df, default value 0.5\cr
+#'  \code{alphapi}   \code{numeric}, prior \eqn{\alpha} for \code{pi}, default value 1 \cr   
+#'  \code{betapi}    \code{numeric}, prior \eqn{\beta} for \code{pi}, default value 9\cr 
+#'  \code{mu_m_t}    \code{numeric}, prior mean for \eqn{\mu_t}, default value 0\cr 
+#'  \code{sigma2_m_t}   \code{numeric}, prior variance for \eqn{\mu_t}, default value 0.01 \cr  
+#'  \code{df_var_t}  \code{numeric}, prior degrees of freedom for \eqn{\sigma^2_t}, default value -1\cr    
+#'  \code{scale_var_t}     \code{numeric}, prior scale for \eqn{\sigma^2_t}, default value 0, the scale and degrees of freedom for \eqn{\sigma^2_t} are non-informative priors based on the original paper\cr 
+  
+#'  @param init \code{list} contains initial values for the Bayesian model, elements in \code{init} can be "df","scale","pi","mut","vart"\cr
+  
+#'  \code{df}    \code{numeric}, the starting value of degrees of freedom parameter for SNP effect variance, default value 5\cr
+#'  \code{scale}   \code{numeric},  the starting value of scale parameter for SNP effect variance, default value 0.02  \cr
+#'  \code{pi}  \code{numeric}, the starting value of \eqn{\pi}, which is the percentage of SNP that has variantion to the phenotype, default value 0.1 for BayesB, 1 for other models \cr
+#'  \code{mut}    \code{numeric},  the starting value of \eqn{\mu_t}, default value 0 \cr 
+#'  \code{vart}   \code{numeric},  the starting value of \eqn{\sigma^2_t}, default value 0.5\cr 
+#' @param D \code{string} indicate use relative variances ("V") or relative precisions ("P"), default is "V" 
+#'  @param update_para \code{list} of \code{logical} indicate whether a parameter is sampled in the Bayesian model, elements in \code{update_para} can be "df","scale","pi","mut","vart"
+  
+#'  \code{df}    \code{logical}, \code{TRUE} if degrees of freedom parameter for SNP effect variance needs to be sampled\cr
+#'  \code{scale}   \code{logical},   \code{TRUE} if scale parameter for SNP effect variance  needs to be sampled\cr
+#'  \code{pi}  \code{logical}, \code{TRUE} if \eqn{\pi} needs to be sampled\cr
+#'  \code{mut}    \code{logical}, \code{TRUE} if  \eqn{\mu_t} needs to be sampled\cr 
+#'  \code{vart}   \code{logical}, \code{TRUE} if \eqn{\sigma^2_t} needs to be sampled\cr 
+  
+#'  @param run_para
+#'  \code{list} elements in \code{run_para} can be "niter","burnIn","skip"
+#'  \code{niter}     \code{numeric}, the number of iterates for MCMC sampling \cr
+#'  \code{burnIn}    \code{numeric},   burnIn period for MCMC sampling \cr
+#'  \code{skip}   \code{numeric} , skip for MCMC sampling\cr
+  
+#'  @param save.at \code{string} define the directory to save the results
+
+#'  @param cv k*n \code{matrix} of \code{logical}, k is the number of folds and n is the number of observations. \code{TRUE} indicates the observation is in the training datasets.
+
+#'  @param print_mcmc \code{list} define the monitor options for the Bayesian model, elements in \code{print_mcmc} can be "piter","time_est","print_to"
+#'  \tabular{ll}{
+#'    \tab \code{piter}    numeric, print status every piter. If piter=0, the program don't print any status\cr
+#'    \tab \code{time_est}   logical, \code{TRUE} mean display time left estimates \cr
+#'    \tab \code{print_to}  string, "disk" means print to disk in file "log.txt"; "screen" means print to screen \cr
+#'  }
+#'  @param ncore  \code{numeric}, the number of cpu cores for the analysis
+#'  @param seed \code{numeric}, seed for random number generator
+#'  @param convcrit \code{numeric}, convergence criteria for EM, default is 1E-4
+#'  @examples 
+#' ##################One proper option for rrBLUP REML#####################
+#' init=list(df=NULL,scale=NULL,vare=NULL)
+#' run_para=list(maxiter=100)
+#' update_para=list(df=FALSE,scale=TRUE)
+#' op<-create.options(model="rrBLUP",method="EM",ante=FALSE,priors=NULL,init=init,
+#'     update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
+#'     
+#' ##################One proper option for rrBLUP MCMC#####################
+#' init=list(df=5,scale=NULL,vare=NULL)
+#' run_para=list(niter=200000,burnIn=100000,skip=10)
+#' print_mcmc=list(piter=10000)
+#' update_para=list(df=FALSE,scale=TRUE)
+#' op<-create.options(model="rrBLUP",method="MCMC",ante=FALSE,priors=NULL,init=init,
+#'     update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=print_mcmc,convcrit=1E-4)
+#' 
+#' ######################One proper option for BayesA MCMC####################
+#' init=list(df=5,scale=0.01,pi=1)
+#' run_para=list(niter=20000,burnIn=10000,skip=10)
+#' print_mcmc=list(piter=2000)
+#' update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
+#' op<-create.options(model="BayesA",method="MCMC",ante=FALSE,priors=NULL,init=init,
+#'     update_para=update_para,run_para=run_para,save.at="BayesA",cv=NULL,print_mcmc=print_mcmc)
 create.options <- function(model=NULL,method=NULL,ante=NULL,poly=NULL,priors=NULL,init=NULL,D="V",update_para=NULL,
                           run_para=NULL,save.at=NULL,cv=NULL,print_mcmc=NULL,ncore=1,seed=1,convcrit=1E-4){
 	#Testing code
