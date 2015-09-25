@@ -216,7 +216,7 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 		if(op$model=="BayesA") cat("BayesA EM iter=",iter,"\n")
 		if(op$model=="rrBLUP")  cat("rrBLUP iter=",iter,"\n")
 		cat ("Residual Variance is ",vare,sep="")
-		cat (" Genetic Variance is ",scalea,sep="")
+		cat (" Scale is ",scalea,sep="")
 		if(op$model=="BayesC") cat (" pi is ",pi_snp,sep="")
 		cat ("\n")
 

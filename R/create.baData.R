@@ -76,7 +76,10 @@ create.baData <- function(synbreedobj=NULL,pheno=NULL,geno=NULL,map=NULL,pedigre
     	#if(nrow(fixed)!=nrow(obj$pheno)) stop("Fixed effects matrix must have the same number of row with phenotype, which should be ", dim(obj$pheno)[1])
 	    obj$fixed=fixed #else{obj$fixed=fixed}  
   }
-  else obj$fixed=matrix(rep(1,nrow(obj$pheno)),nrow=nrow(obj$pheno),ncol=1)
+  else {
+	  obj$fixed=matrix(rep(1,nrow(obj$pheno)),nrow=nrow(obj$pheno),ncol=1)
+	  names(obj$fixed)=rownames(pheno)
+  }
 
   #add other random effect to the object	
   if(!is.null(random)) {

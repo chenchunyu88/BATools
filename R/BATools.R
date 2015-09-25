@@ -38,6 +38,8 @@ bafit <- function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL){
 	if(is.null(dataobj)) 
 	{
 		if(is.null(y) || is.null(Z)) stop("must have baData or y and Z to start the function")
+		if(class(Z)!="matrix") stop("Z must be a matrix")
+		if(class(X)!="matrix") stop("X must be a matrix")
 	}else{
 	 	if(class(dataobj)!="baData") stop("dataobj must be baData")
 	}
