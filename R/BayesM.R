@@ -73,7 +73,7 @@ BayesM = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL,yNa=NULL)
 	    X=as.matrix(X[idx,],ncol=dimX)
 	    y=y[idx]
 	    Z=Z[idx,]
-	}
+	}else idx=NULL
     nSNP=dim(Z)[2]  #number of SNP
     nanim=dim(Z)[1]; #number of animals
 	nrecords = length(y)

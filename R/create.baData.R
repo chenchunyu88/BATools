@@ -78,7 +78,7 @@ create.baData <- function(synbreedobj=NULL,pheno=NULL,geno=NULL,map=NULL,pedigre
   }
   else {
 	  obj$fixed=matrix(rep(1,nrow(obj$pheno)),nrow=nrow(obj$pheno),ncol=1)
-	  names(obj$fixed)=rownames(pheno)
+	  rownames(obj$fixed)=rownames(obj$pheno)
   }
 
   #add other random effect to the object	

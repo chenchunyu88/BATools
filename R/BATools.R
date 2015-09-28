@@ -38,8 +38,14 @@ bafit <- function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL){
 	if(is.null(dataobj)) 
 	{
 		if(is.null(y) || is.null(Z)) stop("must have baData or y and Z to start the function")
-		if(class(Z)!="matrix") stop("Z must be a matrix")
-		if(class(X)!="matrix") stop("X must be a matrix")
+		if(!is.null(Z) && class(Z)!="matrix") {
+			warning("Z is not a matrix, converting it to a matrix, this may cause issue in the estimates")
+			Z=as.matrix(Z)
+		}
+		if(!is.null(X) && class(X)!="matrix") {
+			warning("Z is not a matrix, converting it to a matrix, this may cause issue in the estimates")
+			X=as.matrix(X)
+		}
 	}else{
 	 	if(class(dataobj)!="baData") stop("dataobj must be baData")
 	}

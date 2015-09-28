@@ -69,9 +69,19 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
     nSNP=dim(Z)[2]  #number of SNP
     nanim=dim(Z)[1]; #number of animals
 	
-  	scalea  = op$init$scale
+  	
 	def=op$init$df
-	if(is.null(op$init$vare)) {vare=var(y);lambda = 1000;scalea=vare/lambda} else {vare=op$init$vare; lambda=vare/scalea}
+	if(is.null(op$init$vare)) {vare=as.numeric(var(y,na.rm=TRUE))} else {vare=op$init$vare}
+	if(!is.null(op$init$scale)) scalea  = op$init$scale else{
+		#h2=0.5
+	    #sumMeanZSq = sum((apply(Z,2L,mean))^2)
+		#z2=apply(Z,2L,function(x) sum(x^2))
+		#MSz=z2/nanim-sumMeanZSq
+		#scalea=var(y,na.rm=TRUE)*h2/MSz	
+		#try to use de los campos paper as starting values
+		scalea=vare/100	
+	}
+	lambda=vare/scalea
 	if(is.null(op$init$g)) SNPeff = rep(0,nSNP) else SNPeff=op$init$g
 	if(is.null(op$init$b)) fixedeff = rep(0,dimX) else fixedeff=op$init$b 
 	if(is.null(op$init$phi_est)) phi_est = rep(0,nSNP) else phi_est=op$init$phi_est
@@ -102,7 +112,7 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 	ZZ=  crossprod(Z)
 	Wy=crossprod(W,y)
 	thetakeep = array(0,ncol(W))
-	convcrit = 1E-6 #op$convcrit
+	convcrit = op$convcrit
 	convcurr = 1E10
 
 	tscale=rep(0,2)
@@ -203,11 +213,11 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 		}
 
 
-	  	#if(iter%%4==0){
-		#	scalea=as.numeric(scalea-(scalea-tscale[iter-1])^2/(scalea-2*tscale[iter-1]-tscale[iter-2]))
-		#	vare=as.numeric(vare-(vare-tvare[iter-1])^2/(vare-2*tvare[iter-1]-tvare[iter-2]))
-		#	if(op$model=="BayesC") pi_snp=as.numeric(pi_snp-(pi_snp-tpi[iter-1])^2/(pi_snp-2*tpi[iter-1]-tpi[iter-2]))
-		#}
+	  	if(iter%%4==0){
+			scalea=as.numeric(scalea-(scalea-tscale[iter-1])^2/(scalea-2*tscale[iter-1]-tscale[iter-2]))
+			vare=as.numeric(vare-(vare-tvare[iter-1])^2/(vare-2*tvare[iter-1]-tvare[iter-2]))
+			if(op$model=="BayesC") pi_snp=as.numeric(pi_snp-(pi_snp-tpi[iter-1])^2/(pi_snp-2*tpi[iter-1]-tpi[iter-2]))
+		}
 
 	  	lambda = as.numeric(vare/scalea);
 	  	#gamma = 1/lambda;

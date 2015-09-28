@@ -1,7 +1,7 @@
 Package: BATools
 Type: Package
 Title: An R Package for Whole Genomic Analysis with Bayesian Models
-Version: 0.1.0
+Version: 1.0.0
 Date: 2015-09-22
 Author: Chunyu Chen, Wenzhao Yang, Heng Wang ,Robert J. Tempelman
 Maintainer: Chunyu Chen <chench57@msu.edu>

@@ -20,8 +20,7 @@ print.ba <- function(ba) {
 
 
 
-rankMatrix<-function (x, tol = NULL, method = c("tolNorm2", "qr.R", "qrLINPACK", 
-    "qr", "useGrad", "maybeGrad"), sval = svd(x, 0, 0)$d, warn.t = TRUE) 
+rankMatrix<-function (x, tol = NULL, method = c("tolNorm2", "qr.R", "qrLINPACK", "qr", "useGrad", "maybeGrad"), sval = svd(x, 0, 0)$d, warn.t = TRUE) 
 {
     stopifnot(length(d <- dim(x)) == 2)
     p <- min(d)
@@ -76,7 +75,5 @@ rankMatrix<-function (x, tol = NULL, method = c("tolNorm2", "qr.R", "qrLINPACK",
         }
     }
     else sum(sval >= tol * sval[1]), method = method, useGrad = useGrad, 
-        tol = if (useGrad) 
-            NA
-        else tol)
+        tol = if (useGrad) NA else tol)
 }
