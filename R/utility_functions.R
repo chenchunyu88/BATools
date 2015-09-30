@@ -16,7 +16,106 @@ print.ba <- function(ba) {
     }
 }
 
+#'  Set initial values for hyperparameters
+#'  @title Set initial values for hyperparameters
+#'  @param y `numeric` of phenotypes or `baData` object
+#'	@param Z genotype matrix
+#'  @param baobj `baData` object
+#'  @param df degrees of freedom parameter
+#'  @param pi_snp proportion of SNP that have non-zero effect for BayesB and SSVS
+#'	@param h2 hertiability
+#'	@param c ratio for the smaller variance 
+#'	@param model the model used for analysis, can be 'rrBLUP', 'BayesA','BayesB', or "SSVS"
+#'	@param centered logical indicating if Z is centered
+#'  @return a list of initial values
+#'  @export
+#'
+set_init <- function (y, ...) {
+  UseMethod("set_init", y)
+}
 
+#' @rdname set_init
+#' @method set_init default
+#' @export  
+set_init.default <- function(y,Z,df=5,pi_snp=0.05,h2=0.5,c=1000,model="rrBLUP",centered=T) {    
+  ng=rownames(Z)
+  np=names(y)
+  idx <- Reduce(intersect, list(ng,np))
+  y=y[idx]
+  Z=Z[idx,]
+  if(centered){
+    MSz=mean(apply(Z,2L,function(x) sum(x^2)))
+  }else{
+    z2=apply(Z,2L,function(x) sum(x^2))
+    MSz=sum(z2)/dim(Z)[1]-sum((apply(Z,2L,mean))^2)
+  }
+	scale=switch(model,rrBLUP=h2*var(y)/MSz,BayesA=(df-2)*h2*var(y)/df/MSz,SSVS=c*h2*var(y)/MSz/(c+(1-pi_snp)*(1-c)),BayesB=(df-2)*h2*var(y)/df/MSz/pi_snp)
+	vare=var(y)*(1-h2)*(df+2)
+	if(!(model%in%c("BayesB","SSVS"))) pi_snp=1
+		
+	init<-list(vare=vare,df=df,scale=scale,pi=pi_snp)
+	if(model=="SSVS") init<-list(vare=vare,df=df,scale=scale,pi=pi_snp,c=c)
+	init
+}
+
+
+  
+#' @rdname set_init
+#' @method set_init baData
+#' @export
+set_init.baData <- function(y,df=5,pi_snp=0.05,h2=0.5,c=1000,model="rrBLUP",centered=T,trait=1) {    
+  pheno<-y$pheno
+  geno<-y$geno
+  y1=na.omit(pheno[,trait,1])
+  Z=geno
+  ng=rownames(Z)
+  np=names(y1)
+  idx <- Reduce(intersect, list(ng,np))
+  y1=y1[idx]
+  Z=Z[idx,]
+  init=set_init(y=y1,Z=Z,df=df,pi_snp=pi_snp,h2=h2,c=c,model=model,centered=centered)
+  init
+}
+
+
+
+
+#'  Re-center genotype matrix
+#'  @title Re-center genotype matrix
+#'	@param x genotype matrix or `baData` object
+#'	@param method the method used for centering, `c` is centering and `s` is standardizing 
+#'  @return centered genotype matrix  or `baData` object with centered genotype matrix
+#'  @export
+#'
+std_geno <- function (x, ...) {
+  UseMethod("std_geno", x)
+}
+
+#' @rdname std_geno
+#' @method std_geno default
+#' @export
+std_geno.default <- function(x,method="s") {  
+    Z=x
+    if(method=="c"){
+    	Zc<-apply(Z,2,function(x) (x-mean(x)))	
+    }else if(method=="s"){
+		p<-apply(Z,2,mean)/2
+		tmp<-sweep(Z,2L,2*p,FUN="-")
+		d=sapply(sqrt(2*p*(1-p)),function(x) if(x==0) x=1 else x=x,simplify=T) ###added code to check if p==0
+		Zc<-sweep(tmp,2L,d,FUN="/")
+	}else{stop("method should be either 'c' or 's'")}
+	Zc
+}
+
+
+#' @rdname std_geno
+#' @method std_geno baData
+#' @export
+std_geno.baData <- function(x,method="s") {    
+  if(!is.null(x$geno)) x$geno<-std_geno(x$geno,method=method)
+  else stop("The genotype must be available")
+  x
+}
 
 
 

@@ -23,7 +23,7 @@ trait="driploss"
 y=na.omit(pheno[,trait,1])
 
 X=x
-Z=geno
+Z=std_geno(geno,method="s") #centering the genotype matrix
 nx=rownames(X)
 ng=rownames(Z)
 np=names(y)
@@ -32,12 +32,15 @@ X=as.matrix(X[idx,],ncol=dimX)
 y=y[idx]
 Z=Z[idx,]
 
+
+
+
 ##################run rrBLUP REML#####################
-init=list(df=NULL,scale=NULL,vare=NULL)
+init=set_init(y=y,Z=Z,df=5,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",centered=T)
 run_para=list(maxiter=100)
 update_para=list(df=FALSE,scale=TRUE)
 op<-create.options(model="rrBLUP",method="EM",ante=FALSE,priors=NULL,init=init,
-    update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
+    update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=NULL,convcrit=1E-6)
 
 rr<-bafit(op=op,y=y,Z=Z,X=X)
 rr
@@ -45,7 +48,7 @@ rr
 
 ######################BayesA####################
 ###############Setting up options###############
-init=list(df=5,scale=0.01,pi=1)
+init=list(df=5,scale=0.01,pi=1) #You can use the set_init function if you like
 run_para=list(niter=20000,burnIn=10000,skip=10)
 print_mcmc=list(piter=2000)
 update_para=list(df=FALSE,scale=TRUE,pi=FALSE)

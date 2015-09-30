@@ -26,7 +26,7 @@ Example codes can be obtained by typing: `demo(vignette_demo)` and it's located 
 ###Current working models:
 - rrBLUP based on REML and MCMC
 - BayesA based on EM and MCMC
-- BayesC based on EM and MCMC
+- SSVS (BayesC) based on EM and MCMC
 - BayesB based on MCMC
 
 ###Future commits:
@@ -38,7 +38,7 @@ Example codes can be obtained by typing: `demo(vignette_demo)` and it's located 
 
 - add optimized IW/CD-BayesA/B to the package
 
-2) GWA capabilities based on EM-BayesA/C
+2) GWA capabilities based on EM-BayesA/SSVS
 
 3) implement multi-core computation
 

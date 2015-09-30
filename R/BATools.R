@@ -151,7 +151,7 @@ bafit <- function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL){
     stop("This package requires R 2.15.0 or later")
   assign(".BATools.home", file.path(library, pkg),
          pos=match("package:BATools", search()))
-  BATools.version = "0.1.0 (2015-09-17), build 10"
+  BATools.version = "1.0.0 (2015-09-30), build 10"
   assign(".BATools.version", BATools.version, pos=match("package:BATools", search()))
   if(interactive())
   {
