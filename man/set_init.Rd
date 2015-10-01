@@ -6,20 +6,25 @@
 \alias{set_init.default}
 \title{Set initial values for hyperparameters}
 \usage{
-set_init(x, ...)
+set_init(y, ...)
 
-\method{set_init}{default}(y, Z, df = 5, pi_snp = 0.05, h2 = 0.5,
-  c = 1000, model = "rrBLUP", centered = T)
+\method{set_init}{default}(y, Z, df = 5, scale = NULL, vare = NULL,
+  pi_snp = 0.05, h2 = 0.5, c = 1000, model = "rrBLUP", centered = T)
 
-\method{set_init}{baData}(baobj, df = 5, pi_snp = 0.05, h2 = 0.5,
-  c = 1000, model = "rrBLUP", centered = T, trait = 1)
+\method{set_init}{baData}(y, df = 5, scale = NULL, vare = NULL,
+  pi_snp = 0.05, h2 = 0.5, c = 1000, model = "rrBLUP", centered = T,
+  trait = 1)
 }
 \arguments{
-\item{y}{`numeric` of phenotypes}
+\item{y}{`numeric` of phenotypes or `baData` object}
 
 \item{Z}{genotype matrix}
 
 \item{df}{degrees of freedom parameter}
+
+\item{scale}{scale parameter, if is `NULL` set automatically}
+
+\item{vare}{residual variance, if is `NULL` set automatically}
 
 \item{pi_snp}{proportion of SNP that have non-zero effect for BayesB and SSVS}
 

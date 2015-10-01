@@ -13,11 +13,9 @@ std_geno(x, ...)
 \method{std_geno}{baData}(x, method = "s")
 }
 \arguments{
-\item{x}{genotype matrix}
+\item{x}{genotype matrix or `baData` object}
 
 \item{method}{the method used for centering, `c` is centering and `s` is standardizing}
-
-\item{baobj}{`baData` object}
 }
 \value{
 centered genotype matrix  or `baData` object with centered genotype matrix

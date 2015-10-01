@@ -26,7 +26,9 @@ pig<-std_geno(pig_tmp,method="s") #centering the genotype matrix
 
 
 ##################run rrBLUP REML#####################
-init=set_init(pig,df=5,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",centered=T,trait="driploss")
+init=set_init(pig,df=5,scale=NULL,vare=NULL,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",centered=T,trait="driploss")
+init=set_init(pig,df=5,scale=0.2,vare=2,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",centered=T,trait="driploss")
+
 run_para=list(maxiter=100)
 priors=list(nu_e=-2,tau2_e=0,nu_s=-2,tau2_s=0) #REML like prior, change nu_e=-1 if you want to use Gelman's prior
 update_para=list(scale=TRUE)
