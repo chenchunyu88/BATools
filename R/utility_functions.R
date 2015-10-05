@@ -44,7 +44,7 @@ set_init <- function (y, ...) {
 #' @rdname set_init
 #' @method set_init default
 #' @export  
-set_init.default <- function(y,Z,df=5,scale=NULL,vare=NULL,pi_snp=0.05,h2=0.5,c=1000,model="rrBLUP",centered=T,from=NULL) {    
+set_init.default <- function(y,Z,df=5,scale=NULL,vare=NULL,g=NULL,beta=NULL,pi_snp=0.05,h2=0.5,c=1000,model="rrBLUP",centered=T,from=NULL) {    
   ng=rownames(Z)
   np=names(y)
   idx <- Reduce(intersect, list(ng,np))
@@ -74,7 +74,7 @@ set_init.default <- function(y,Z,df=5,scale=NULL,vare=NULL,pi_snp=0.05,h2=0.5,c=
 	if(!(model%in%c("BayesB","SSVS"))) pi_snp=1
 		
 	init<-list(vare=vare,df=df,scale=scale,pi=pi_snp)
-	if(model=="SSVS") init<-list(vare=vare,df=df,scale=scale,pi=pi_snp,c=c)
+	if(model=="SSVS") init<-list(vare=vare,df=df,scale=scale,g=g,beta=beta,pi=pi_snp,c=c)
 	init
 }
 
@@ -83,7 +83,7 @@ set_init.default <- function(y,Z,df=5,scale=NULL,vare=NULL,pi_snp=0.05,h2=0.5,c=
 #' @rdname set_init
 #' @method set_init baData
 #' @export
-set_init.baData <- function(y,df=5,scale=NULL,vare=NULL,pi_snp=0.05,h2=0.5,c=1000,model="rrBLUP",centered=T,trait=1,from=NULL) {    
+set_init.baData <- function(y,df=5,scale=NULL,vare=NULL,g=NULL,beta=NULL,pi_snp=0.05,h2=0.5,c=1000,model="rrBLUP",centered=T,trait=1,from=NULL) {    
   pheno<-y$pheno
   geno<-y$geno
   y1=na.omit(pheno[,trait,1])
@@ -93,7 +93,7 @@ set_init.baData <- function(y,df=5,scale=NULL,vare=NULL,pi_snp=0.05,h2=0.5,c=100
   idx <- Reduce(intersect, list(ng,np))
   y1=y1[idx]
   Z=Z[idx,]
-  init=set_init(y=y1,Z=Z,df=df,scale=scale,vare=vare,pi_snp=pi_snp,h2=h2,c=c,model=model,centered=centered,from=from)
+  init=set_init(y=y1,Z=Z,df=df,scale=scale,vare=vare,g=g,beta=beta,pi_snp=pi_snp,h2=h2,c=c,model=model,centered=centered,from=from)
   init
 }
 

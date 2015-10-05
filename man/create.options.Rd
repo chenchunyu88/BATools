@@ -10,7 +10,7 @@ create.options(model = NULL, method = NULL, ante = NULL, poly = NULL,
   ncore = 1, seed = 1, convcrit = 1e-04)
 }
 \arguments{
-\item{model}{string indicate the model for the analysis, \code{model} can be "GBLUP","BayesA", or "BayesB"}
+\item{model}{string indicate the model for the analysis, \code{model} can be "GBLUP","BayesA", "BayesB", or "SSVS"}
 
 \item{method}{string indicate the method for the analysis, \code{model} can be "MCMC" or "EM"}
 
@@ -45,7 +45,8 @@ create.options(model = NULL, method = NULL, ante = NULL, poly = NULL,
 \code{scale}   \code{logical},   \code{TRUE} if scale parameter for SNP effect variance  needs to be sampled\cr
 \code{pi}  \code{logical}, \code{TRUE} if \eqn{\pi} needs to be sampled\cr
 \code{mut}    \code{logical}, \code{TRUE} if  \eqn{\mu_t} needs to be sampled\cr
-\code{vart}   \code{logical}, \code{TRUE} if \eqn{\sigma^2_t} needs to be sampled\cr}
+\code{vart}   \code{logical}, \code{TRUE} if \eqn{\sigma^2_t} needs to be sampled\cr
+\code{vare}   \code{logical}, \code{TRUE} if \eqn{\sigma^2_e} needs to be sampled\cr}
 
 \item{run_para}{\code{list} elements in \code{run_para} can be "niter","burnIn","skip"
 \code{niter}     \code{numeric}, the number of iterates for MCMC sampling \cr

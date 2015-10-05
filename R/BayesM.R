@@ -211,6 +211,7 @@ BayesM = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL,yNa=NULL)
 		        ycorr=BayesC[[2]]
 		        SNPeff=theta[-(1:dimX)]
 		        phi=BayesC[[3]]
+		        if(itersave>0) phisave=phisave+phi
 			}
 	 		 	
 		} # "END" OF BAYESB
@@ -436,6 +437,10 @@ BayesM = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL,yNa=NULL)
 	#Z=Z0
 	#if(!is.null(dataobj)) X=X0
 	#}
+	if(op$model=="SSVS"){
+	  phisave=phisave/itersave
+	  names(phisave)=colnames(Z)
+	}
 	sample_idx=c((op$run_para$burnIn/op$run_para$skip+1):(op$run_para$niter/op$run_para$skip))
 	hyper_est=apply(hyperparameters[sample_idx,],2,mean)
 	names_hypers=c("vare")

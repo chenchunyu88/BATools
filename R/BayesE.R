@@ -83,7 +83,7 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 	}
 	lambda=vare/scalea
 	if(is.null(op$init$g)) SNPeff = rep(0,nSNP) else SNPeff=op$init$g
-	if(is.null(op$init$b)) fixedeff = rep(0,dimX) else fixedeff=op$init$b 
+	if(is.null(op$init$beta)) fixedeff = rep(0,dimX) else fixedeff=op$init$b 
 	if(is.null(op$init$phi_est)) phi_est = rep(0,nSNP) else phi_est=op$init$phi_est
 	if(!is.null(op$init$pi)) pi_snp=op$init$pi
 	if(!is.null(op$init$c)) c=op$init$c
@@ -267,15 +267,37 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 	
 	if(op$model=="SSVS"){
 		hyper_est=c(vare,scalea,pi_snp)
-		names(hyper_est)=c("vare","varg","pi")
+		names(hyper_est)=c("vare","scale","pi")
 	}
 	if(op$model=="BayesA"){
 		hyper_est=c(vare,scalea)
-		names(hyper_est)=c("vare","varg")
+		names(hyper_est)=c("vare","scale")
 	}
 	if(op$model=="rrBLUP"){
 		hyper_est=c(vare,scalea)
-		names(hyper_est)=c("vare","varg")
+		names(hyper_est)=c("vare","scale")
+	}
+	
+	if(op$model=="BayesA"){
+	  meanvarg=(SNPeff^2+def*scalea)/(def+1)
+	  Dinv=diag(1/meanvarg*(1-2*SNPeff^2/(def+1)/meanvarg))
+	  ZZ_G=ZZ/vare+Dinv
+	  coeff=rbind( cbind(XX/vare,XZ/vare),
+	               cbind(ZX/vare,ZZ_G))
+	  C=solve(coeff)
+	  Cgg=C[(dimX+1):(dimX+nSNP),(dimX+1):(dimX+nSNP)]
+	}
+	
+	if(op$model=="SSVS"){
+	  h1=dnorm(SNPeff,mean=0,sd=sqrt(scalea))
+	  h0=dnorm(SNPeff,mean=0,sd=sqrt(scalea/c))
+	  tau=as.numeric(pi_snp/((h0/h1)*(1-pi_snp)+pi_snp))
+	  Dinv=diag((tau+c*(1-tau))/scalea-SNPeff^2*tau*(1-tau)*(1-c)^2/scalea^2)
+	  ZZ_G=ZZ/vare+Dinv
+	  coeff=rbind( cbind(XX/vare,XZ/vare),
+	               cbind(ZX/vare,ZZ_G))
+	  C=solve(coeff)
+	  Cgg=C[(dimX+1):(dimX+nSNP),(dimX+1):(dimX+nSNP)]
 	}
 	
   	#if(length(whichNa)>0)
@@ -286,8 +308,8 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 	
  	if(op$poly)
 	{
-		BAout<-list(betahat=betahat,ghat=SNPeff, yhat=theta[1]+Z%*%SNPeff+Zu%*%SNPeffBLUP_u,uhat=SNPeffBLUP_u,hypers=c(vare,scalea),Ginv=Ainv,Cuu=Cgg,sdbeta=sdbeta)
-	}else BAout<-list(betahat=betahat,ghat=SNPeff, yhat=yhat,hyper_est=hyper_est,Cgg=Cgg,pi_snp=pi_snp,phi_est=phi_est,idx=idx,trait=trait,iter=iter,sdbeta=sdbeta)
+		BAout<-list(betahat=betahat,ghat=SNPeff, yhat=theta[1]+Z%*%SNPeff+Zu%*%SNPeffBLUP_u,uhat=SNPeffBLUP_u,hypers=c(vare,scalea),Ginv=Ainv,Cuu=Cgg,sdbeta=sdbeta,model=op$model,df=def)
+	}else BAout<-list(betahat=betahat,ghat=SNPeff, yhat=yhat,hyper_est=hyper_est,Cgg=Cgg,pi_snp=pi_snp,phi_est=phi_est,idx=idx,trait=trait,iter=iter,sdbeta=sdbeta,model=op$model,df=def)
   
   	class(BAout)="ba"
   	return(BAout)	

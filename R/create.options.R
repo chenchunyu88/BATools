@@ -184,7 +184,7 @@ create.options <- function(model=NULL,method=NULL,ante=NULL,poly=NULL,priors=NUL
 	}	
 
         #define initial values
-	initial_names=c("df","scale","pi","varu","d","Sig","vare","g","b","c")
+	initial_names=c("df","scale","pi","varu","d","Sig","vare","g","beta","c")
 	initial_names_ante=c("df","scale","pi","varu","mut","vart")	   
 
 	if(is.null(init$df)) init$df=5
