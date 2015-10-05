@@ -29,21 +29,22 @@ pig<-std_geno(pig_tmp,method="s") #centering the genotype matrix
 init=set_init(pig,df=5,scale=NULL,vare=NULL,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",centered=T,trait="driploss")
 init=set_init(pig,df=5,scale=0.2,vare=2,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",centered=T,trait="driploss")
 
+
+init=set_init(pig,df=5,scale=0.5156796908,vare=0.0002319995,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",centered=T,trait="driploss")
 run_para=list(maxiter=100)
 priors=list(nu_e=-2,tau2_e=0,nu_s=-2,tau2_s=0) #REML like prior, change nu_e=-1 if you want to use Gelman's prior
-update_para=list(scale=TRUE)
+update_para=list(scale=F,vare=F)
 op<-create.options(model="rrBLUP",method="EM",ante=FALSE,priors=NULL,init=init,
     update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
 
 rr<-bafit(dataobj=pig,op=op,trait="driploss")
-
 
 ##################run rrBLUP MCMC#####################
 init=set_init(pig,df=5,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",centered=T,trait="driploss")
 run_para=list(niter=200000,burnIn=100000,skip=10)
 priors=list(nu_e=-2,tau2_e=0,nu_s=-2,tau2_s=0) #REML like prior, change nu_e=-1 if you want to use Gelman's prior
 print_mcmc=list(piter=10000,time_est=T,print_to="screen")
-update_para=list(df=FALSE,scale=TRUE)
+update_para=list(df=F,scale=TRUE)
 op<-create.options(model="rrBLUP",method="MCMC",ante=FALSE,priors=priors,init=init,
     update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=print_mcmc,convcrit=1E-4)
 
@@ -59,7 +60,7 @@ init=set_init(pig,df=5,pi_snp=1,h2=0.5,c=NULL,model="BayesA",centered=T,trait="d
 run_para=list(niter=20000,burnIn=10000,skip=10)
 print_mcmc=list(piter=2000,time_est=T,print_to="screen")
 priors=list(nu_e=-1,tau2_e=0,nu_s=-1,tau2_s=0) 
-update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
+update_para=list(df=T,scale=TRUE,pi=FALSE)
 op<-create.options(model="BayesA",method="MCMC",ante=FALSE,priors=priors,init=init,
                    update_para=update_para,run_para=run_para,save.at="BayesA",cv=NULL,print_mcmc=print_mcmc)
 
@@ -70,7 +71,7 @@ ba<-bafit(dataobj=pig,op=op,trait="driploss")
 ba
 
 baplot(dataobj=pig,BAout=ba,type="pre")
-baplot(dataobj=pig,BAout=ba,type="trace",op=op)
+baplot(dataobj=pig,BAout=ba,type="trace",op=op,iterStart = 1)
 
 ##################run BayesA EM#####################
 init=list(df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,pi=1)
@@ -96,9 +97,9 @@ run_para=list(niter=20000,burnIn=10000,skip=10)
 print_mcmc=list(piter=2000)
 update_para=list(df=F,scale=T,pi=T)
 priors=list(shape_scale=5,rate_scale=0.1,alphapi=1,betapi=9,nu_e=-2,tau2_e=0)
-op<-create.options(model="BayesC",method="MCMC",
+op<-create.options(model="SSVS",method="MCMC",
 ante=FALSE,priors=priors,init=init,update_para=update_para,
-run_para=run_para,save.at="BayesCC",cv=NULL,print_mcmc=print_mcmc)
+run_para=run_para,save.at="SSVS",cv=NULL,print_mcmc=print_mcmc)
 
 bc<-bafit(dataobj=pig,op=op,trait="driploss")
 
@@ -106,12 +107,13 @@ bc<-bafit(dataobj=pig,op=op,trait="driploss")
 
 
 ##################run BayesC EM#####################
-init=list(df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,pi=0.1,c=1000)
+init=set_init(pig,df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],pi_snp=0.05,h2=0.5,c=1000,model="SSVS",centered=T,trait="driploss",from="rrBLUP")
+
 run_para=list(maxiter=100)
 priors=list(nu_e=-2,tau2_e=0,nu_s=-2,tau2_s=0)
 update_para=list(df=FALSE,scale=TRUE,pi=T)
-op<-create.options(model="BayesC",method="EM",ante=FALSE,priors=priors,init=init,
-    update_para=update_para,run_para=run_para,save.at="BayesC",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
+op<-create.options(model="SSVS",method="EM",ante=FALSE,priors=priors,init=init,
+    update_para=update_para,run_para=run_para,save.at="SSVS",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
 
 #bc_em<-BayesCe(dataobj=pig,op=op,trait="driploss")
 bc_em<-bafit(dataobj=pig,op=op,trait="driploss")

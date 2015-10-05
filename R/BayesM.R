@@ -102,13 +102,13 @@ BayesM = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL,yNa=NULL)
 	# initialize a few arrays
 	theta      = array(0,dimW)
 	SNPeff     = array(0,nSNP)
-	if(op$model=="BayesC"){
+	if(op$model=="SSVS"){
 	    phi=array(0,nSNP)
 	    hratio=array(0,nSNP)
 	    loghratio=array(0,nSNP)
 	    phisave=array(0,nSNP)
 	    hratiosave=c()
-		c=op$init$c
+		  c=op$init$c
 	}
 	varq       = array(scalea,nSNP)  # initialize each SNP variance to overall scale parameter
 	SNPvar     = array(0,nSNP)       # used to take running sum of SNP specific variances
@@ -202,7 +202,7 @@ BayesM = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL,yNa=NULL)
 				alpha1=BayesB[[6]][1]
 				alphacheck=BayesB[[7]][1]	
 			}
-			if(op$model=="BayesC"){
+			if(op$model=="SSVS"){
 				#####################################################################################
 				# sample effect and variance for each SNP (Bayes C)	
 				#####################################################################################
@@ -285,7 +285,7 @@ BayesM = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL,yNa=NULL)
 			}
      	}   # "END" OF SAMPLE THE DEGREES OF FREEDOM  
 
-        if(op$model=="BayesC"){
+        if(op$model=="SSVS"){
 	        #####################################################################################
 	        #  sample scale#
 	        #  based on Gelman Uniform(0,A) prior on scale parameter for "large" A.
@@ -352,7 +352,7 @@ BayesM = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL,yNa=NULL)
 		if (op$update_para$pi) 
 		{ 
 			if(op$model=="BayesB") 	Pi_SNP = rbeta(1,op$priors$alphapi+G1,op$priors$betapi+nSNP-G1) 
-			if(op$model=="BayesC") {
+			if(op$model=="SSVS") {
 		 	   m1=sum(phi)
 		       Pi_SNP=rbeta(1,op$priors$alphapi+m1,op$priors$betapi+nSNP-m1)
 			}	
@@ -377,7 +377,7 @@ BayesM = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL,yNa=NULL)
 		
 		if((op$print_mcmc$piter!=0) & iter%%op$print_mcmc$piter==0)
 		{
-			tmp=paste("iter= ",iter," vare= ",round(vare,6), "scale= ", round(scalea,8),"timepercycle= ", round(timeSNP/iter,3), "estimated time left=", round(timeSNP/iter*(op$run_para$niter-iter),2),"\n",sep=" ")
+			tmp=paste("iter= ",iter," vare= ",round(vare,6), "scale= ", round(scalea,8),"timepercycle= ", round(timeSNP/iter,3), "estimated time left=", round(timeSNP/iter*(op$run_para$niter-iter),2),"seconds \n",sep=" ")
 			if(op$print_mcmc$print_to=="screen")
 			{
 				cat(tmp)
@@ -438,16 +438,23 @@ BayesM = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL,yNa=NULL)
 	#}
 	sample_idx=c((op$run_para$burnIn/op$run_para$skip+1):(op$run_para$niter/op$run_para$skip))
 	hyper_est=apply(hyperparameters[sample_idx,],2,mean)
-	if(op$model%in%c("BayesB","BayesC")) colnames(hyperparameters)=c("vare","varg","pi") else colnames(hyperparameters)=c("vare","varg")
-	if(op$model%in%c("BayesB","BayesC")) names(hyper_est)=c("vare","varg","pi") else names(hyper_est)=c("vare","varg")
+	names_hypers=c("vare")
+	if (op$update_para$scale) {names_hypers = c(names_hypers,"scale") }
+	if (op$update_para$df) {names_hypers = c(names_hypers,"df") }
+	if (op$update_para$pi) {names_hypers = c(names_hypers,"pi") }
+	if(op$poly) {hyperparameters = c(names_hypers,"varu")}	
+	colnames(hyperparameters)=names_hypers
+	names(hyper_est)=names_hypers  
+	#if(op$model%in%c("BayesB","SSVS")) colnames(hyperparameters)=c("vare","varg","pi") else colnames(hyperparameters)=c("vare","varg")
+	#if(op$model%in%c("BayesB","SSVS")) names(hyper_est)=c("vare","varg","pi") else names(hyper_est)=c("vare","varg")
   	if(op$poly)
   	{
 		if(op$model=="BayesB") BAout<-list(betahat=meanmu,ghat=meang,yhat=X%*%meanmu+Z%*%meang+Zu%*%meanu,prob=postprob_save,uhat=meanu,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,idx=idx,trait=trait,hyper_est=hyper_est)
-		else if (op$model=="BayesC") BAout<-list(betahat=meanmu,ghat=meang, yhat=X%*%meanmu+Z%*%meang+Zu%*%meanu,uhat=meanu,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,phisave=phisave,idx=idx,trait=trait,hyper_est=hyper_est)
+		else if (op$model=="SSVS") BAout<-list(betahat=meanmu,ghat=meang, yhat=X%*%meanmu+Z%*%meang+Zu%*%meanu,uhat=meanu,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,phisave=phisave,idx=idx,trait=trait,hyper_est=hyper_est)
 		else BAout<-list(betahat=meanmu,ghat=meang, yhat=X%*%meanmu+Z%*%meang+Zu%*%meanu,uhat=meanu,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,idx=idx,trait=trait,hyper_est=hyper_est)
 	}else {
 		if(op$model=="BayesB") BAout<-list(betahat=meanmu,ghat=meang, yhat=X%*%meanmu+Z%*%meang,prob=postprob_save,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,idx=idx,trait=trait,hyper_est=hyper_est)
-		else if (op$model=="BayesC") BAout<-list(betahat=meanmu,ghat=meang, yhat=X%*%meanmu+Z%*%meang,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,phisave=phisave,idx=idx,trait=trait,hyper_est=hyper_est)
+		else if (op$model=="SSVS") BAout<-list(betahat=meanmu,ghat=meang, yhat=X%*%meanmu+Z%*%meang,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,phisave=phisave,idx=idx,trait=trait,hyper_est=hyper_est)
 		else BAout<-list(betahat=meanmu,ghat=meang, yhat=X%*%meanmu+Z%*%meang,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,idx=idx,trait=trait,hyper_est=hyper_est)
 	}
 	class(BAout)="ba"

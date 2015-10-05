@@ -1,0 +1,3 @@
+check variable names to be consistent
+add gwas
+

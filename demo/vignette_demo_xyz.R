@@ -87,9 +87,9 @@ run_para=list(niter=2000,burnIn=1000,skip=1)
 print_mcmc=list(piter=200)
 update_para=list(df=F,scale=T,pi=T)
 priors=list(shape_scale=5,rate_scale=0.1,alphapi=1,betapi=9)
-op<-create.options(model="BayesC",method="MCMC",
+op<-create.options(model="SSVS",method="MCMC",
 ante=FALSE,priors=NULL,init=init,update_para=update_para,
-run_para=run_para,save.at="BayesC",cv=NULL,print_mcmc=print_mcmc)
+run_para=run_para,save.at="SSVS",cv=NULL,print_mcmc=print_mcmc)
 
 bc<-bafit(op=op,y=y,Z=Z,X=X)
 
@@ -98,8 +98,8 @@ bc<-bafit(op=op,y=y,Z=Z,X=X)
 init=list(df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,pi=0.1,c=1000)
 run_para=list(maxiter=100)
 update_para=list(df=FALSE,scale=TRUE,pi=T)
-op<-create.options(model="BayesC",method="EM",ante=FALSE,priors=NULL,init=init,
-    update_para=update_para,run_para=run_para,save.at="BayesC",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
+op<-create.options(model="SSVS",method="EM",ante=FALSE,priors=NULL,init=init,
+    update_para=update_para,run_para=run_para,save.at="SSVS",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
 
 bc_em<-bafit(op=op,y=y,Z=Z,X=X)
 

@@ -8,6 +8,10 @@ print.ba <- function(ba) {
     cat("BATools analysis of trait:", ba$trait, "\n")    
     cat("\nestimated fixed effects:\n")
     print(ba$betahat)
+    if(!is.null(ba$sdbeta)){
+      cat("\nSD\n")
+      print(ba$sdbeta)
+    }
     cat("\nestimated hyperparameters:\n")
     print(ba$hyper_est)
     if(!is.null(ba$eff_sample)) {
@@ -29,6 +33,7 @@ print.ba <- function(ba) {
 #'	@param c ratio for the smaller variance 
 #'	@param model the model used for analysis, can be 'rrBLUP', 'BayesA','BayesB', or "SSVS"
 #'	@param centered logical indicating if Z is centered
+#'	@param from the source of scale, if it's 'rrBLUP', the scale will be adjusted for BayesA and SSVS
 #'  @return a list of initial values
 #'  @export
 #'
@@ -39,7 +44,7 @@ set_init <- function (y, ...) {
 #' @rdname set_init
 #' @method set_init default
 #' @export  
-set_init.default <- function(y,Z,df=5,scale=NULL,vare=NULL,pi_snp=0.05,h2=0.5,c=1000,model="rrBLUP",centered=T) {    
+set_init.default <- function(y,Z,df=5,scale=NULL,vare=NULL,pi_snp=0.05,h2=0.5,c=1000,model="rrBLUP",centered=T,from=NULL) {    
   ng=rownames(Z)
   np=names(y)
   idx <- Reduce(intersect, list(ng,np))
@@ -53,8 +58,15 @@ set_init.default <- function(y,Z,df=5,scale=NULL,vare=NULL,pi_snp=0.05,h2=0.5,c=
       MSz=sum(z2)/dim(Z)[1]-sum((apply(Z,2L,mean))^2)
     }
     scale=switch(model,rrBLUP=h2*var(y)/MSz,BayesA=(df-2)*h2*var(y)/df/MSz,SSVS=c*h2*var(y)/MSz/(c+(1-pi_snp)*(1-c)),BayesB=(df-2)*h2*var(y)/df/MSz/pi_snp)
+  }else{
+    if(!is.null(from)){
+      if(from=="rrBLUP"){
+        if(model=="BayesA") scale=(df-2)/df*scale
+        if(model=="SSVS") scale=c/(c+(1-pi_snp)*(1-c))*scale
+      }
+    }
   }
-  
+
   if(is.null(vare)){
     vare=var(y)*(1-h2)*(df+2)
   }
@@ -71,7 +83,7 @@ set_init.default <- function(y,Z,df=5,scale=NULL,vare=NULL,pi_snp=0.05,h2=0.5,c=
 #' @rdname set_init
 #' @method set_init baData
 #' @export
-set_init.baData <- function(y,df=5,scale=NULL,vare=NULL,pi_snp=0.05,h2=0.5,c=1000,model="rrBLUP",centered=T,trait=1) {    
+set_init.baData <- function(y,df=5,scale=NULL,vare=NULL,pi_snp=0.05,h2=0.5,c=1000,model="rrBLUP",centered=T,trait=1,from=NULL) {    
   pheno<-y$pheno
   geno<-y$geno
   y1=na.omit(pheno[,trait,1])
@@ -81,7 +93,7 @@ set_init.baData <- function(y,df=5,scale=NULL,vare=NULL,pi_snp=0.05,h2=0.5,c=100
   idx <- Reduce(intersect, list(ng,np))
   y1=y1[idx]
   Z=Z[idx,]
-  init=set_init(y=y1,Z=Z,df=df,scale=scale,vare=vare,pi_snp=pi_snp,h2=h2,c=c,model=model,centered=centered)
+  init=set_init(y=y1,Z=Z,df=df,scale=scale,vare=vare,pi_snp=pi_snp,h2=h2,c=c,model=model,centered=centered,from=from)
   init
 }
 

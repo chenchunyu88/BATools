@@ -14,16 +14,17 @@
 #'    \tab \code{"trace"}  Traceplot \cr
 #'  }
 #'  @param op \code{op} object created by create.options that is used for the analysis
+#'  @param iterStart the starting iteration for traceplot
 #'  @details You can either provide \code{baData} or y and Z for this function. If they're provided at the same time, \code{dataobj} will be used for the analysis
 #' @examples 
 #' baplot(dataobj=pig,BAout=ba,type="pre")
 #' baplot(dataobj=pig,BAout=ba,type="trace",op=op)
-baplot <- function(dataobj=NULL,BAout=NULL,y=NULL,Z=NULL,yNa=NULL,type=NULL,op=NULL){
+baplot <- function(dataobj=NULL,BAout=NULL,y=NULL,Z=NULL,yNa=NULL,type=NULL,op=NULL,iterStart=NULL){
 	if(is.null(BAout)) stop("BAout must be provided for the function")
 	plot_types=c("pre","man","trace")
 	if(type=="trace"){
-	if(is.null(op)) sample_idx=1:dim(BAout$hypers)[1]
-	else sample_idx=c((op$run_para$burnIn/op$run_para$skip+1):(op$run_para$niter/op$run_para$skip))
+	  if(is.null(iterStart)) sample_idx=c((op$run_para$burnIn %/% op$run_para$skip+1):(op$run_para$niter/op$run_para$skip))
+	  else sample_idx=c((iterStart %/% op$run_para$skip+1):(op$run_para$niter/op$run_para$skip))
 	}
 	if(!is.null(type))
 	{

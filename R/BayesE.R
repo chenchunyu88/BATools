@@ -129,9 +129,9 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 	##########start BayesEM###########
 	while (abs(convcurr) > convcrit)
 	{
-  
+  	  	SNPeff0=SNPeff
 	  	iter = iter+1
-		if(op$model=="BayesC")
+		if(op$model=="SSVS")
 	  	{
 			h1=dnorm(SNPeff,mean=0,sd=sqrt(scalea))
 			h0=dnorm(SNPeff,mean=0,sd=sqrt(scalea/c))
@@ -151,96 +151,108 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 		ZZ_G=ZZ+Dinv*as.numeric(lambda)
 	  	coeff=rbind( cbind(XX,XZ),
 	               	 cbind(ZX,ZZ_G))
-	  	C=solve(coeff)
-	  	theta=C%*%Wy
-	  	SNPeff=theta[-(1:dimX)]
-	  	ycorr=y-W%*%theta
+					 
+		if(op$update_para$scale || op$update_para$vare){
+		  	C=solve(coeff)
+		  	theta=C%*%Wy
+		  	SNPeff=theta[-(1:dimX)]
+		  	ycorr=y-W%*%theta
 		
-		if(op$model=="rrBLUP" && iter==1)
-	  	{
-	      vare=as.numeric(crossprod(y,ycorr)/(nrecords-rankX))
-	      scalea=vare/lambda   
-	  	}
+			if(op$model=="rrBLUP" && iter==1)
+		  	{
+		      vare=as.numeric(crossprod(y,ycorr)/(nrecords-rankX))
+		      scalea=vare/lambda   
+		  	}
 		
-  	   	if(op$update_para$pi){
-			alpha_pi=1
-	   		beta_pi=9
-	   		pi_snp=(sum(phi_est)+alpha_pi-1)/(alpha_pi+beta_pi+nSNP-2)
-		}
-	  	Cgg=C[(dimX+1):(dimX+nSNP),(dimX+1):(dimX+nSNP)]*vare
+	  	   	if(op$update_para$pi){
+				alpha_pi=1
+		   		beta_pi=9
+		   		pi_snp=(sum(phi_est)+alpha_pi-1)/(alpha_pi+beta_pi+nSNP-2)
+			}
+		  	Cgg=C[(dimX+1):(dimX+nSNP),(dimX+1):(dimX+nSNP)]*vare
 		
-	  	fsigma2e=ycorr/vare
-	  	WCW=W%*%C%*%t(W)
-	  	Pfsigma2e=(fsigma2e-WCW%*%fsigma2e)/vare
+		  	fsigma2e=ycorr/vare
+		  	WCW=W%*%C%*%t(W)
+		  	Pfsigma2e=(fsigma2e-WCW%*%fsigma2e)/vare
 
-	  	fsigma2u=Z%*%SNPeff/scalea
-	  	Pfsigma2u=(fsigma2u-WCW%*%fsigma2u)/vare
+		  	fsigma2u=Z%*%SNPeff/scalea
+		  	Pfsigma2u=(fsigma2u-WCW%*%fsigma2u)/vare
 
-	  	informAI[1,1]=t(fsigma2e)%*%Pfsigma2e+nu_e*tau2_e/(vare^3)-(nu_e+2)/(2*vare^2)
-	  	informAI[1,2]=t(fsigma2e)%*%Pfsigma2u
-	  	informAI[2,1]=t(fsigma2u)%*%Pfsigma2e
-	  	informAI[2,2]=t(fsigma2u)%*%Pfsigma2u+nu_s*tau2_s/(scalea^3)-(nu_s+2)/(2*scalea^2)
-	  	informAI=informAI/2
+		  	informAI[1,1]=t(fsigma2e)%*%Pfsigma2e+nu_e*tau2_e/(vare^3)-(nu_e+2)/(2*vare^2)
+		  	informAI[1,2]=t(fsigma2e)%*%Pfsigma2u
+		  	informAI[2,1]=t(fsigma2u)%*%Pfsigma2e
+		  	informAI[2,2]=t(fsigma2u)%*%Pfsigma2u+nu_s*tau2_s/(scalea^3)-(nu_s+2)/(2*scalea^2)
+		  	informAI=informAI/2
 	  	
-		if(op$model=="rrBLUP"){
-		    traceCgg=sum(diag(Cgg))	
-		    derivAI[1]=-0.5*((nrecords-rankX)/vare-(nSNP-traceCgg/scalea)/vare-crossprod(ycorr)/(vare^2))+nu_e*tau2_e/(vare^3)-(nu_e+2)/(2*vare^2)
-		    derivAI[2]=-0.5*(nSNP/scalea-traceCgg/(scalea^2)-crossprod(SNPeff)/(scalea^2))+nu_s*tau2_s/(scalea^3)-(nu_s+2)/(2*scalea^2)
-		}else{
-			traceCgg=sum(diag(Dinv%*%Cgg))
-			derivAI[1]=-0.5*((nrecords-rankX)/vare-(nSNP-traceCgg/scalea)/vare-crossprod(ycorr)/(vare^2)) +nu_e*tau2_e/(vare^3)-(nu_e+2)/(2*vare^2)
-			derivAI[2]=-0.5*(nSNP/scalea-traceCgg/(scalea^2)-t(SNPeff)%*%Dinv%*%SNPeff/(scalea^2)+1/scalea) +nu_s*tau2_s/(scalea^3)-(nu_s+2)/(2*scalea^2)
-		}
+			if(op$model=="rrBLUP"){
+			    traceCgg=sum(diag(Cgg))	
+			    derivAI[1]=-0.5*((nrecords-rankX)/vare-(nSNP-traceCgg/scalea)/vare-crossprod(ycorr)/(vare^2))+nu_e*tau2_e/(2*vare^2)-(nu_e+2)/(2*vare)
+			    derivAI[2]=-0.5*(nSNP/scalea-traceCgg/(scalea^2)-crossprod(SNPeff)/(scalea^2))+nu_s*tau2_s/(2*scalea^2)-(nu_s+2)/(2*scalea)
+			}else{
+				traceCgg=sum(diag(Dinv%*%Cgg))
+				derivAI[1]=-0.5*((nrecords-rankX)/vare-(nSNP-traceCgg/scalea)/vare-crossprod(ycorr)/(vare^2)) +nu_e*tau2_e/(2*vare^2)-(nu_e+2)/(2*vare)
+				derivAI[2]=-0.5*(nSNP/scalea-traceCgg/(scalea^2)-t(SNPeff)%*%Dinv%*%SNPeff/(scalea^2)) +nu_s*tau2_s/(2*scalea^2)-(nu_s+2)/(2*scalea)
+			}
 		
 		
 
-	  	vardiff=solve(informAI)%*%derivAI
-
-		if((vardiff[1]+vare)<=0)
-		{
-			vare=vare/2
+		  	vardiff=solve(informAI)%*%derivAI
+		  	if(op$update_para$vare){
+			    if((vardiff[1]+vare)<=0)
+				{
+					vare=vare/2
+				}else{
+					vare=vare+as.numeric(vardiff[1])
+				}
+		  	}
+			if(op$update_para$scale)
+			{
+			  	if((scalea+vardiff[2])<=0)
+			  	{	
+			    	scalea=scalea/2
+			  	}else{
+			    	scalea=scalea+as.numeric(vardiff[2])
+			  	}	
+			}
 		}else{
-			vare=vare+as.numeric(vardiff[1])
+			theta=solve(coeff,Wy)
+			SNPeff=theta[-(1:dimX)]
 		}
-		if(op$update_para$scale)
-		{
-		  	if((scalea+vardiff[2])<=0)
-		  	{	
-		    	scalea=scalea/2
-		  	}else{
-		    	scalea=scalea+as.numeric(vardiff[2])
-		  	}	
-		}
-
 
 	  	if(iter%%4==0){
 			scalea=as.numeric(scalea-(scalea-tscale[iter-1])^2/(scalea-2*tscale[iter-1]-tscale[iter-2]))
 			vare=as.numeric(vare-(vare-tvare[iter-1])^2/(vare-2*tvare[iter-1]-tvare[iter-2]))
-			if(op$model=="BayesC") pi_snp=as.numeric(pi_snp-(pi_snp-tpi[iter-1])^2/(pi_snp-2*tpi[iter-1]-tpi[iter-2]))
+			if(op$model=="SSVS") pi_snp=as.numeric(pi_snp-(pi_snp-tpi[iter-1])^2/(pi_snp-2*tpi[iter-1]-tpi[iter-2]))
 		}
 
 	  	lambda = as.numeric(vare/scalea);
 	  	#gamma = 1/lambda;
 
-		if(op$model=="BayesC") cat("BayesC EM iter=",iter,"\n")
+		if(op$model=="SSVS") cat("SSVS EM iter=",iter,"\n")
 		if(op$model=="BayesA") cat("BayesA EM iter=",iter,"\n")
 		if(op$model=="rrBLUP")  cat("rrBLUP iter=",iter,"\n")
 		cat ("Residual Variance is ",vare,sep="")
 		cat (" Scale is ",scalea,sep="")
 		if(op$model=="BayesC") cat (" pi is ",pi_snp,sep="")
 		cat ("\n")
+		
+		
 
 	  	tscale[iter]=scalea
 	  	tvare[iter]=vare
-		if(op$model=="BayesC") tpi[iter]=pi_snp
+		if(op$model=="SSVS") tpi[iter]=pi_snp
 	  	thetakeep = cbind(thetakeep,theta)            #keep iterate
-	  	if(iter>1) convcurr=sqrt(sum(vardiff^2)/(vare^2+scalea^2))
+	  	if(iter>1) {
+			if(op$update_para$scale || op$update_para$vare) convcurr=sqrt(sum(vardiff^2)/(vare^2+scalea^2))
+			else convcurr=crossprod(SNPeff-SNPeff0)/crossprod(SNPeff)
+		}
 	  	tcon[iter]=convcurr
+		cat("Convergence criteria is ",convcrit," and current value is ",convcurr,"\n",sep="")
 
 	}
-	if(op$model=="BayesC") cat("\nBayesC converged after ",iter," iterations and the convergence critira is ",convcurr,"\n",sep="")
-	if(op$model=="BayesA") cat("\nBayesA converged after ",iter," iterations and the convergence critira is ",convcurr,"\n",sep="")
-	if(op$model=="rrBLUP") cat("\nrrBLUP converged after ",iter," iterations and the convergence critira is ",convcurr,"\n",sep="")
+	if(op$model=="SSVS") cat("\nSSVS converged after ",iter," iterations at ",convcurr,"\n",sep="")
+	if(op$model=="BayesA") cat("\nBayesA converged after ",iter," iterations at ",convcurr,"\n",sep="")
+	if(op$model=="rrBLUP") cat("\nrrBLUP converged after ",iter," iterations at ",convcurr,"\n",sep="")
 	
 	save(SNPeff,iter,tscale,tvare,tpi,thetakeep,theta,file = paste(op$save.at,op$seed,".RData",sep=""))
 ##########End BayesC###########
@@ -248,10 +260,12 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 	yhat=X%*%theta[1:dimX]+Z%*%SNPeff
 	
 	betahat=theta[1:dimX]
+	if(op$update_para$scale || op$update_para$vare) sdbeta=sqrt(diag(C[1:dimX,1:dimX]))
+		else {Cgg=NULL;sdbeta=NULL}
 	names(betahat)=colnames(X)
 	
 	
-	if(op$model=="BayesC"){
+	if(op$model=="SSVS"){
 		hyper_est=c(vare,scalea,pi_snp)
 		names(hyper_est)=c("vare","varg","pi")
 	}
@@ -272,8 +286,8 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 	
  	if(op$poly)
 	{
-		BAout<-list(betahat=betahat,ghat=SNPeff, yhat=theta[1]+Z%*%SNPeff+Zu%*%SNPeffBLUP_u,uhat=SNPeffBLUP_u,hypers=c(vare,scalea),Ginv=Ainv,Cuu=Cgg)
-	}else BAout<-list(betahat=betahat,ghat=SNPeff, yhat=yhat,hyper_est=hyper_est,Cgg=Cgg,pi_snp=pi_snp,phi_est=phi_est,idx=idx,trait=trait,iter=iter)
+		BAout<-list(betahat=betahat,ghat=SNPeff, yhat=theta[1]+Z%*%SNPeff+Zu%*%SNPeffBLUP_u,uhat=SNPeffBLUP_u,hypers=c(vare,scalea),Ginv=Ainv,Cuu=Cgg,sdbeta=sdbeta)
+	}else BAout<-list(betahat=betahat,ghat=SNPeff, yhat=yhat,hyper_est=hyper_est,Cgg=Cgg,pi_snp=pi_snp,phi_est=phi_est,idx=idx,trait=trait,iter=iter,sdbeta=sdbeta)
   
   	class(BAout)="ba"
   	return(BAout)	

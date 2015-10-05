@@ -112,7 +112,7 @@ bafit <- function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL){
 		}
 	}
 	
-	if(op$model=="BayesC")
+	if(op$model=="SSVS")
 		{
 			if(op$method=="MCMC")
 			{

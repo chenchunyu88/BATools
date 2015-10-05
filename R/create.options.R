@@ -1,7 +1,7 @@
 #' Create object for options of bayesian model
 #'  @export
 #'  @title create \code{\link{op}} object
-#'  @param  model string indicate the model for the analysis, \code{model} can be "GBLUP","BayesA", or "BayesB"
+#'  @param  model string indicate the model for the analysis, \code{model} can be "GBLUP","BayesA", "BayesB", or "SSVS"
 #'  @param method string indicate the method for the analysis, \code{model} can be "MCMC" or "EM"
 #'  @param ante logical, must be \code{TRUE} or \code{FALSE}
 #'  @param priors \code{list} contains priors for the Bayesian model, elements in \code{priors} can be "nu_e","tau2_e",\cr"shape_scale","rate_scale","cdef","alphapi","betapi","mu_m_t","sigma2_m_t",\cr
@@ -34,6 +34,7 @@
 #'  \code{pi}  \code{logical}, \code{TRUE} if \eqn{\pi} needs to be sampled\cr
 #'  \code{mut}    \code{logical}, \code{TRUE} if  \eqn{\mu_t} needs to be sampled\cr 
 #'  \code{vart}   \code{logical}, \code{TRUE} if \eqn{\sigma^2_t} needs to be sampled\cr 
+#'  \code{vare}   \code{logical}, \code{TRUE} if \eqn{\sigma^2_e} needs to be sampled\cr 
   
 #'  @param run_para
 #'  \code{list} elements in \code{run_para} can be "niter","burnIn","skip"
@@ -83,7 +84,7 @@ create.options <- function(model=NULL,method=NULL,ante=NULL,poly=NULL,priors=NUL
 	#model=NULL;method=NULL;ante=NULL;priors=NULL;init=NULL;update_para=NULL;
 	#run_para=NULL;save.at=NULL;cv=NULL;print_mcmc=NULL;ncore=1;poly=NULL	
   	#define models
-	models=c("GBLUP","rrBLUP","BayesA","BayesB","BayesC","IWBayesA")
+	models=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","IWBayesA")
   	if(!is.null(model))
   	{
 		if(!(prod(model %in% models)))
@@ -151,7 +152,7 @@ create.options <- function(model=NULL,method=NULL,ante=NULL,poly=NULL,priors=NUL
 	if(is.null(priors$cdef)) priors$cdef=0.5
 	if(is.null(priors$cscalea)) priors$cscalea=0.5
 	
-	if(model%in%c("BayesC","BayesB"))
+	if(model%in%c("SSVS","BayesB"))
 	{
 		if(is.null(priors$alphapi)) priors$alphapi=1
 		if(is.null(priors$betapi)) priors$betapi = 9
@@ -220,12 +221,13 @@ create.options <- function(model=NULL,method=NULL,ante=NULL,poly=NULL,priors=NUL
 	}
 	
 	#define update parameters
-	update_names=c("df","scale","pi")
-	update_names_ante=c("df","scale","pi","mut","vart")
+	update_names=c("df","scale","pi","vare")
+	update_names_ante=c("df","scale","pi","mut","vart","vare")
 	
 	
-	if(is.null(update_para$df)) {update_para$df=TRUE}
+	if(is.null(update_para$df)) {update_para$df=FALSE}
 	if(is.null(update_para$scale)) {update_para$scale=TRUE}
+	if(is.null(update_para$vare)) {update_para$vare=TRUE}
 	if(is.null(update_para$pi)) 
 	{
 		if(model=="BayesB") update_para$pi=TRUE else update_para$pi=FALSE
