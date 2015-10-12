@@ -136,19 +136,20 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 			h1=dnorm(SNPeff,mean=0,sd=sqrt(scalea))
 			h0=dnorm(SNPeff,mean=0,sd=sqrt(scalea/c))
 			phi_est=pi_snp/((h0/h1)*(1-pi_snp)+pi_snp)
-			Dinv=diag((1-phi_est)*c+phi_est)
+			Dinv=((1-phi_est)*c+phi_est)
 	  	}
 		
 		if(op$model=="BayesA")
 	  	{
-		    if(op$D=="V") Dinv=diag(as.numeric((def+1)/(def + SNPeff*SNPeff/scalea)))
-		  	else Dinv=diag(as.numeric((def-1)/(def + SNPeff*SNPeff/scalea)))
+		    if(op$D=="V") Dinv=(as.numeric((def+1)/(def + SNPeff*SNPeff/scalea)))
+		  	else Dinv=(as.numeric((def-1)/(def + SNPeff*SNPeff/scalea)))
 	  	}
 		
-		if(op$model=="rrBLUP") Dinv=diag(length(Z[1,]))
+		if(op$model=="rrBLUP") Dinv=(length(Z[1,]))
 
 		
-		ZZ_G=ZZ+Dinv*as.numeric(lambda)
+		ZZ_G=ZZ
+		diag(ZZ_G)=diag(ZZ)+Dinv*as.numeric(lambda)
 	  	coeff=rbind( cbind(XX,XZ),
 	               	 cbind(ZX,ZZ_G))
 					 
@@ -189,7 +190,7 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 			    derivAI[1]=-0.5*((nrecords-rankX)/vare-(nSNP-traceCgg/scalea)/vare-crossprod(ycorr)/(vare^2))+nu_e*tau2_e/(2*vare^2)-(nu_e+2)/(2*vare)
 			    derivAI[2]=-0.5*(nSNP/scalea-traceCgg/(scalea^2)-crossprod(SNPeff)/(scalea^2))+nu_s*tau2_s/(2*scalea^2)-(nu_s+2)/(2*scalea)
 			}else{
-				traceCgg=sum(diag(Dinv%*%Cgg))
+				traceCgg=sum(Dinv%*%diag(Cgg))
 				derivAI[1]=-0.5*((nrecords-rankX)/vare-(nSNP-traceCgg/scalea)/vare-crossprod(ycorr)/(vare^2)) +nu_e*tau2_e/(2*vare^2)-(nu_e+2)/(2*vare)
 				derivAI[2]=-0.5*(nSNP/scalea-traceCgg/(scalea^2)-t(SNPeff)%*%Dinv%*%SNPeff/(scalea^2)) +nu_s*tau2_s/(2*scalea^2)-(nu_s+2)/(2*scalea)
 			}

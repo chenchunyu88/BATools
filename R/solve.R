@@ -1,4 +1,4 @@
-pcg <-function(A,b,M,maxiter=1e5,tol=1e-6)
+pcg_r <-function(A,b,M,maxiter=1e5,tol=1e-6)
 {
 	if (missing(M)) 
 	{
@@ -30,3 +30,14 @@ pcg <-function(A,b,M,maxiter=1e5,tol=1e-6)
 	return(x)
 }
 
+#pcg_solve <- cxxfunction(signature(As="numeric", bs="numeric",Minvs="numeric",maxiters="integer",tols="numeric"),src,"RcppArmadillo")
+
+pcg <-function(A,b,M,maxiter=1e5,tol=1e-6){
+  if (missing(M) || is.null(M)) 
+  {
+    dA<-diag(A)
+    dA[which(dA==0)]=1e-4
+    Minv=diag(1/dA,nrow=nrow(A)) 
+  } else Minv=solve(M)
+  .Call("pcg_c",A,b,Minv,maxiter,tol)
+}

@@ -34,6 +34,8 @@
 #' ba
 #'  @export
 #'  @useDynLib BATools
+#' @importFrom Rcpp sourceCpp
+#' @import RcppArmadillo
 bafit <- function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL){
 	if(is.null(dataobj)) 
 	{

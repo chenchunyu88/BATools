@@ -35,7 +35,7 @@
 #' names(pig.syn)
 #' #create baData object using raw data
 #' pig=create.baData(pheno=pheno,geno=geno,map=map,pedigree=ped,fixed=x,makeAinv=F)
-#'  @export
+#' @export
 create.baData <- function(synbreedobj=NULL,pheno=NULL,geno=NULL,map=NULL,pedigree=NULL,family=NULL,covar=NULL,
                           reorderMap=TRUE,map.unit="cM",repeated=NULL,modCovar=NULL,A=NULL,
 			  Ainv=NULL,fixed=NULL,random=NULL,makeA=FALSE,makeAinv=FALSE){
