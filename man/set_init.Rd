@@ -9,12 +9,11 @@
 set_init(y, ...)
 
 \method{set_init}{default}(y, Z, df = 5, scale = NULL, vare = NULL,
-  pi_snp = 0.05, h2 = 0.5, c = 1000, model = "rrBLUP", centered = T,
-  from = NULL)
+  pi_snp = 0.05, h2 = 0.5, c = 1000, model = "rrBLUP", centered = T)
 
 \method{set_init}{baData}(y, df = 5, scale = NULL, vare = NULL,
   pi_snp = 0.05, h2 = 0.5, c = 1000, model = "rrBLUP", centered = T,
-  trait = 1, from = NULL)
+  trait = 1)
 }
 \arguments{
 \item{y}{`numeric` of phenotypes or `baData` object}
@@ -36,8 +35,6 @@ set_init(y, ...)
 \item{model}{the model used for analysis, can be 'rrBLUP', 'BayesA','BayesB', or "SSVS"}
 
 \item{centered}{logical indicating if Z is centered}
-
-\item{from}{the source of scale, if it's 'rrBLUP', the scale will be adjusted for BayesA and SSVS}
 
 \item{baobj}{`baData` object}
 }

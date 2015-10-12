@@ -5,7 +5,7 @@
 \title{plot result for bafit}
 \usage{
 baplot(dataobj = NULL, BAout = NULL, y = NULL, Z = NULL, yNa = NULL,
-  type = NULL, op = NULL, iterStart = NULL)
+  type = NULL, op = NULL)
 }
 \arguments{
 \item{dataobj}{\code{baData} object}
@@ -26,8 +26,6 @@ baplot(dataobj = NULL, BAout = NULL, y = NULL, Z = NULL, yNa = NULL,
 }}
 
 \item{op}{\code{op} object created by create.options that is used for the analysis}
-
-\item{iterStart}{the starting iteration for traceplot}
 }
 \description{
 Plot the results for the Bayesian models
