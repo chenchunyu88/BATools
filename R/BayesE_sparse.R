@@ -138,19 +138,20 @@ BayesE_PCG = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 			h1=dnorm(SNPeff,mean=0,sd=sqrt(scalea))
 			h0=dnorm(SNPeff,mean=0,sd=sqrt(scalea/c))
 			phi_est=pi_snp/((h0/h1)*(1-pi_snp)+pi_snp)
-			Dinv=diag((1-phi_est)*c+phi_est)
+			Dinv=(1-phi_est)*c+phi_est
 	  	}
 		
 		if(op$model=="BayesA")
 	  	{
-		    if(op$D=="V") Dinv=diag(as.numeric((def+1)/(def + SNPeff*SNPeff/scalea)))
-		  	else Dinv=diag(as.numeric((def-1)/(def + SNPeff*SNPeff/scalea)))
+		    if(op$D=="V") Dinv=as.numeric((def+1)/(def + SNPeff*SNPeff/scalea))
+		  	else Dinv=as.numeric((def-1)/(def + SNPeff*SNPeff/scalea))
 	  	}
 		
-		if(op$model=="rrBLUP") Dinv=diag(length(Z[1,]))
+		if(op$model=="rrBLUP") Dinv=rep(1,length(Z[1,]))
 
 		
-		ZZ_G=ZZ+Dinv*as.numeric(lambda)
+		ZZ_G=ZZ
+		diag(ZZ_G)=diag(ZZ)+Dinv*as.numeric(lambda)
 	  	coeff=rbind( cbind(XX,XZ),
 	               	 cbind(ZX,ZZ_G))
 					 
