@@ -41,4 +41,26 @@ extern "C" SEXP pcg_c( SEXP As, SEXP bs, SEXP Minvs, SEXP maxiters, SEXP tols) {
 	}
 	return Rcpp::wrap(x);
 }
+
+/*
+extern "C" SEXP set_coeff( SEXP XXs, SEXP XZs, SEXP ZXs, SEXP ZZs) {
+	
+    Rcpp::NumericMatrix XXr(XXs);                 // creates Rcpp matrix from SEXP
+	Rcpp::NumericMatrix XZr(XZs);                 // creates Rcpp matrix from SEXP
+	Rcpp::NumericMatrix ZXr(ZXs);                 // creates Rcpp matrix from SEXP
+	Rcpp::NumericMatrix ZZr(ZZs);                 // creates Rcpp matrix from SEXP
+    int dimW = XXr.nrow()+ZZr.nrow(),dimX=XXr.nrow(),dimZ=ZZr.nrow();
+    
+	arma::mat coeff=zeros<mat>(dimW,dimW);
+	
+
+	coeff.submat(0,0,dimX-1,dimX-1)=XXr;
+	//coeff.submat(0,dimX,dimX,dimW-1)=XZr;
+	//coeff.submat(dimX,0,dimW-1,dimX)=ZXr;
+	//coeff.submat(dimX,dimX,dimW-1,dimW-1)=ZZr;
+
+	return Rcpp::wrap(coeff);
+}*/
+
+
 	

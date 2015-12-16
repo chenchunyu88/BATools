@@ -1,8 +1,8 @@
 #######################################################################################
 #######################################################################################
-dataobj=pig;op=op;y=NULL;Z=NULL;G=NULL;X=NULL;trait="driploss"
+#dataobj=pig;op=op;y=NULL;Z=NULL;G=NULL;X=NULL;trait="driploss"
 #Bayes EM approach
-BayesE_PCG = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)  
+BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)  
 #  startpi is defined by the proportion of markers that ARE associate with genes
 {   # START OF FUNCTION
 	
@@ -111,16 +111,6 @@ BayesE_PCG = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 	ZX=  crossprod(Z,X)
 	ZZ=  crossprod(Z)
 	Wy=crossprod(W,y)
-	coeff=matrix(0,dimW,dimW)
-	if(nSNP>nanim){
-		Za=diag(1,nanim,nanim)
-		XZa=  crossprod(X,Za)
-		ZXa=  crossprod(Za,X)
-		ZZa=  crossprod(Za)
-		Wa=cbind(X,Za)
-		Wya=crossprod(Wa,y)
-	}
-	
 	thetakeep = array(0,ncol(W))
 	convcrit = op$convcrit
 	convcurr = 1E10
@@ -132,17 +122,13 @@ BayesE_PCG = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 	rankX=as.numeric(rankMatrix(X))
 	derivAI=matrix(0,2,1)
 	informAI=matrix(0,2,2)
-	dCgg=rep(0,nSNP)
-	dC=rep(0,dimX+nSNP)
 	iter=0
 	#vare=rb$Ve
 	#scalea=rb$Vu
 	#lambda=1000000
 	##########start BayesEM###########
-	while (abs(convcurr) > convcrit & iter<op$run_para$maxiter)
+	while (abs(convcurr) > convcrit)
 	{
-		system.time({
-		#	for(i in 1:4){
   	  	SNPeff0=SNPeff
 	  	iter = iter+1
 		if(op$model=="SSVS")
@@ -150,124 +136,63 @@ BayesE_PCG = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 			h1=dnorm(SNPeff,mean=0,sd=sqrt(scalea))
 			h0=dnorm(SNPeff,mean=0,sd=sqrt(scalea/c))
 			phi_est=pi_snp/((h0/h1)*(1-pi_snp)+pi_snp)
-			Dinv=(1-phi_est)*c+phi_est
+			Dinv=diag((1-phi_est)*c+phi_est)
 	  	}
 		
 		if(op$model=="BayesA")
 	  	{
-		    if(op$D=="V") Dinv=as.numeric((def+1)/(def + SNPeff*SNPeff/scalea))
-		  	else Dinv=as.numeric((def-1)/(def + SNPeff*SNPeff/scalea))
+		    if(op$D=="V") Dinv=diag(as.numeric((def+1)/(def + SNPeff*SNPeff/scalea)))
+		  	else Dinv=diag(as.numeric((def-1)/(def + SNPeff*SNPeff/scalea)))
 	  	}
 		
-		if(op$model=="rrBLUP") Dinv=rep(1,length(Z[1,]))
+		if(op$model=="rrBLUP") Dinv=diag(length(Z[1,]))
 
-		microbenchmark({coeff=rbind( cbind(XX,XZ),
-		               	 cbind(ZX,ZZ))})
-		if(iter==1){
-		  	coeff=rbind( cbind(XX,XZ),
-		               	 cbind(ZX,ZZ))
-			#coeff[1:dimX,1:dimX]=XX
-			#coeff[1:dimX,1:dimX]=XX
-			#coeff[1:dimX,1:dimX]=XX
-			#coeff[(dimX+1):(dimX+nSNP),(dimX+1):(dimX+nSNP)]=ZZ
-						 
-		}
-		#system.time({for(k in (dimX+1):dimW) coeff[k,k]=diag(ZZ)[k-dimX]+Dinv[k-dimX]*lambda})
 		
-		#system.time({diag(coeff)[(dimX+1):(dimX+nSNP)]=diag(ZZ)+Dinv*lambda})
-					 
-					 
-					 
-	 	if(nSNP>nanim){
-	 		ZGZ=tcrossprod(Z%*%diag(1/Dinv),Z)+diag(0.001,nanim)
-			Ginv_a=solve(ZGZ)
-			ZZ_G=ZZa+Ginv_a*lambda
-			coeff_a=rbind( cbind(XX,XZa),
-	               	 cbind(ZXa,ZZ_G))
-	 	}
+		ZZ_G=ZZ+Dinv*as.numeric(lambda)
+	  	coeff=rbind( cbind(XX,XZ),
+	               	 cbind(ZX,ZZ_G))
 					 
 		if(op$update_para$scale || op$update_para$vare){
-		  	#C=solve(coeff)
-		  	theta=pcg(coeff,Wy)
+		  	C=solve(coeff)
+		  	theta=C%*%Wy
 		  	SNPeff=theta[-(1:dimX)]
-		  	#ycorr=y-W%*%theta
-		    
-			if(nSNP>nanim){
-				Ca=solve(coeff_a)
-				theta_a=Ca%*%Wya
-				u=theta_a[-c(1:dimX)]
-				Caa=Ca[(dimX+1):(dimX+nanim),(dimX+1):(dimX+nanim)]*as.numeric(vare)
-				dCaa=diag(Caa)
-				ycorr_a=y-Wa%*%theta_a
-			}
-		  	
+		  	ycorr=y-W%*%theta
+		
 			if(op$model=="rrBLUP" && iter==1)
 		  	{
 		      vare=as.numeric(crossprod(y,ycorr)/(nrecords-rankX))
-			  if(nSNP>nanim) vare=as.numeric(crossprod(y,ycorr_a)/(nrecords-rankX))
 		      scalea=vare/lambda   
 		  	}
 		
 	  	   	if(op$update_para$pi){
-				  alpha_pi=1
+				alpha_pi=1
 		   		beta_pi=9
 		   		pi_snp=(sum(phi_est)+alpha_pi-1)/(alpha_pi+beta_pi+nSNP-2)
 			}
-			#system.time({
-			#for(k in 1:(dimX+nSNP)){
-			#	b=rep(0,nSNP+dimX)
-			#	b[k]=1
-			#	tmp=pcg(coeff,b)
-			#	dC[k]=tmp[k]
-			#}
-		    #})
-		    #dCgg=dC[-c(1:dimX)]
-			#dCgg=dCgg*vare
-		  	#Cgg=C[(dimX+1):(dimX+nSNP),(dimX+1):(dimX+nSNP)]*vare
-		    if(nSNP>nanim){
-		  	  fsigma2e=ycorr_a/as.numeric(vare)
-		  	  Pfsigma2e=(fsigma2e-Wa%*%Ca%*%t(Wa)%*%fsigma2e)/as.numeric(vare)
+		  	Cgg=C[(dimX+1):(dimX+nSNP),(dimX+1):(dimX+nSNP)]*vare
+		
+		  	fsigma2e=ycorr/vare
+		  	WCW=W%*%C%*%t(W)
+		  	Pfsigma2e=(fsigma2e-WCW%*%fsigma2e)/vare
 
-		  	  fsigma2u=u/as.numeric(scalea)
-		  	  Pfsigma2u=(fsigma2u-Wa%*%Ca%*%t(Wa)%*%fsigma2u)/as.numeric(vare)
-			  
-				if(op$model=="rrBLUP"){
-				    traceCgg_a=sum(diag(Ginv_a%*%Caa))	
-				    derivAI[1]=-0.5*((nrecords-rankX)/vare-(nanim-traceCgg_a/scalea)/vare-crossprod(ycorr_a)/(vare^2))+nu_e*tau2_e/(2*vare^2)-(nu_e+2)/(2*vare)
-				    derivAI[2]=-0.5*(nanim/scalea-traceCgg_a/(scalea^2)-crossprod(u,Ginv_a%*%u)/(scalea^2))+nu_s*tau2_s/(2*scalea^2)-(nu_s+2)/(2*scalea)
-				}else{
-					traceCgg_a=sum(diag(Ginv_a%*%Caa))
-					derivAI[1]=-0.5*((nrecords-rankX)/vare-(nanim-traceCgg/scalea)/vare-crossprod(ycorr_a)/(vare^2)) +nu_e*tau2_e/(2*vare^2)-(nu_e+2)/(2*vare)
-					derivAI[2]=-0.5*(nanim/scalea-traceCgg/(scalea^2)-crossprod(u,Ginv_a%*%u)/(scalea^2)) +nu_s*tau2_s/(2*scalea^2)-(nu_s+2)/(2*scalea)
-				}
-		    }else{
-			  	fsigma2e=ycorr/vare
-			  	Wfe=crossprod(W,fsigma2e)
-			  	sol_e=pcg(coeff,Wfe)
-			  	Pfsigma2e= (fsigma2e-W%*%sol_e)/vare
+		  	fsigma2u=Z%*%SNPeff/scalea
+		  	Pfsigma2u=(fsigma2u-WCW%*%fsigma2u)/vare
 
-			  	fsigma2u=Z%*%SNPeff/scalea
-				Wfu=crossprod(W,fsigma2u)
-				sol_u=pcg(coeff,Wfu)
-			  	Pfsigma2u= (fsigma2u-W%*%sol_u)/vare
-				
-				if(op$model=="rrBLUP"){
-				    traceCgg=sum(dCgg)	
-				    derivAI[1]=-0.5*((nrecords-rankX)/vare-(nSNP-traceCgg/scalea)/vare-crossprod(ycorr)/(vare^2))+nu_e*tau2_e/(2*vare^2)-(nu_e+2)/(2*vare)
-				    derivAI[2]=-0.5*(nSNP/scalea-traceCgg/(scalea^2)-crossprod(SNPeff)/(scalea^2))+nu_s*tau2_s/(2*scalea^2)-(nu_s+2)/(2*scalea)
-				}else{
-					traceCgg=sum(diag(Dinv)*dCgg)
-					derivAI[1]=-0.5*((nrecords-rankX)/vare-(nSNP-traceCgg/scalea)/vare-crossprod(ycorr)/(vare^2)) +nu_e*tau2_e/(2*vare^2)-(nu_e+2)/(2*vare)
-					derivAI[2]=-0.5*(nSNP/scalea-traceCgg/(scalea^2)-t(SNPeff)%*%Dinv%*%SNPeff/(scalea^2)) +nu_s*tau2_s/(2*scalea^2)-(nu_s+2)/(2*scalea)
-				}
-			}
 		  	informAI[1,1]=t(fsigma2e)%*%Pfsigma2e+nu_e*tau2_e/(vare^3)-(nu_e+2)/(2*vare^2)
 		  	informAI[1,2]=t(fsigma2e)%*%Pfsigma2u
 		  	informAI[2,1]=t(fsigma2u)%*%Pfsigma2e
 		  	informAI[2,2]=t(fsigma2u)%*%Pfsigma2u+nu_s*tau2_s/(scalea^3)-(nu_s+2)/(2*scalea^2)
 		  	informAI=informAI/2
-	  	    
-
+	  	
+			if(op$model=="rrBLUP"){
+			    traceCgg=sum(diag(Cgg))	
+			    derivAI[1]=-0.5*((nrecords-rankX)/vare-(nSNP-traceCgg/scalea)/vare-crossprod(ycorr)/(vare^2))+nu_e*tau2_e/(2*vare^2)-(nu_e+2)/(2*vare)
+			    derivAI[2]=-0.5*(nSNP/scalea-traceCgg/(scalea^2)-crossprod(SNPeff)/(scalea^2))+nu_s*tau2_s/(2*scalea^2)-(nu_s+2)/(2*scalea)
+			}else{
+				traceCgg=sum(diag(Dinv%*%Cgg))
+				derivAI[1]=-0.5*((nrecords-rankX)/vare-(nSNP-traceCgg/scalea)/vare-crossprod(ycorr)/(vare^2)) +nu_e*tau2_e/(2*vare^2)-(nu_e+2)/(2*vare)
+				derivAI[2]=-0.5*(nSNP/scalea-traceCgg/(scalea^2)-t(SNPeff)%*%Dinv%*%SNPeff/(scalea^2)) +nu_s*tau2_s/(2*scalea^2)-(nu_s+2)/(2*scalea)
+			}
 		
 		
 
@@ -290,17 +215,16 @@ BayesE_PCG = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 			  	}	
 			}
 		}else{
-			theta=pcg(coeff,Wy)
+			theta=solve(coeff,Wy)
 			SNPeff=theta[-(1:dimX)]
 		}
-		if(scalea>100) scale=100
-			if(vare>100) vare=100
 
-	  	#if(iter%%4==0){
-		#	scalea=as.numeric(scalea-(scalea-tscale[iter-1])^2/(scalea-2*tscale[iter-1]-tscale[iter-2]))
-		#	vare=as.numeric(vare-(vare-tvare[iter-1])^2/(vare-2*tvare[iter-1]-tvare[iter-2]))
-		#	if(op$model=="SSVS") pi_snp=as.numeric(pi_snp-(pi_snp-tpi[iter-1])^2/(pi_snp-2*tpi[iter-1]-tpi[iter-2]))
-		#}
+	  	if(iter%%4==0){
+			scalea=as.numeric(scalea-(scalea-tscale[iter-1])^2/(scalea-2*tscale[iter-1]-tscale[iter-2]))
+			vare=as.numeric(vare-(vare-tvare[iter-1])^2/(vare-2*tvare[iter-1]-tvare[iter-2]))
+			if(op$model=="SSVS") pi_snp=as.numeric(pi_snp-(pi_snp-tpi[iter-1])^2/(pi_snp-2*tpi[iter-1]-tpi[iter-2]))
+		}
+
 	  	lambda = as.numeric(vare/scalea);
 	  	#gamma = 1/lambda;
 
@@ -324,8 +248,7 @@ BayesE_PCG = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 		}
 	  	tcon[iter]=convcurr
 		cat("Convergence criteria is ",convcrit," and current value is ",convcurr,"\n",sep="")
-		#}
-		})
+
 	}
 	if(op$model=="SSVS") cat("\nSSVS converged after ",iter," iterations at ",convcurr,"\n",sep="")
 	if(op$model=="BayesA") cat("\nBayesA converged after ",iter," iterations at ",convcurr,"\n",sep="")
@@ -337,12 +260,9 @@ BayesE_PCG = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 	yhat=X%*%theta[1:dimX]+Z%*%SNPeff
 	
 	betahat=theta[1:dimX]
-	if(op$update_para$scale || op$update_para$vare) {
-	  sdbeta=sqrt(dC[1:dimX])
-	  names(sdbeta)=colnames(X)
-	}else {Cgg=NULL;sdbeta=NULL}
+	if(op$update_para$scale || op$update_para$vare) sdbeta=sqrt(diag(C[1:dimX,1:dimX]))
+		else {Cgg=NULL;sdbeta=NULL}
 	names(betahat)=colnames(X)
-	
 	
 	
 	if(op$model=="SSVS"){
@@ -363,14 +283,11 @@ BayesE_PCG = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 	#	Z=Z0
 	#	if(!is.null(dataobj)) X=X0
   	#}
-	if(nSNP>nanim){
-		Cgg=Caa
-		dCgg=dCaa
-	}
+	
  	if(op$poly)
 	{
-		BAout<-list(betahat=betahat,ghat=SNPeff, yhat=theta[1]+Z%*%SNPeff+Zu%*%SNPeffBLUP_u,uhat=SNPeffBLUP_u,hypers=c(vare,scalea),Ginv=Ainv,dCuu=dCgg,sdbeta=sdbeta)
-	}else BAout<-list(betahat=betahat,ghat=SNPeff, yhat=yhat,hyper_est=hyper_est,dCgg=dCgg,pi_snp=pi_snp,phi_est=phi_est,idx=idx,trait=trait,iter=iter,sdbeta=sdbeta)
+		BAout<-list(betahat=betahat,ghat=SNPeff, yhat=theta[1]+Z%*%SNPeff+Zu%*%SNPeffBLUP_u,uhat=SNPeffBLUP_u,hypers=c(vare,scalea),Ginv=Ainv,Cuu=Cgg,sdbeta=sdbeta)
+	}else BAout<-list(betahat=betahat,ghat=SNPeff, yhat=yhat,hyper_est=hyper_est,Cgg=Cgg,pi_snp=pi_snp,phi_est=phi_est,idx=idx,trait=trait,iter=iter,sdbeta=sdbeta)
   
   	class(BAout)="ba"
   	return(BAout)	
@@ -379,28 +296,3 @@ BayesE_PCG = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 #######################################################################################
 #######################################################################################
 
-cppFunction('NumericVector set_coeff(NumericMatrix XX,NumericMatrix XZ,NumericMatrix ZZ) {
-  int  dimX = XX.nrow(),dimZ=ZZ.nrow();
-  int dimW=dimX+dimZ;
-  NumericMatrix coeff(dimW,dimW);
-
-  for (int i = 0; i < dimX; i++)
-    for (int j = 0; j < dimX; j++) 
-  	  coeff(i,j)=XX(i,j);
-  
-  for (int i = 0; i < dimX; i++)
-    for (int j = dimX; j < dimW; j++) {
-		coeff(i,j)=XZ(i,j-dimX);
-		coeff(j,i)=coeff(i,j);
-	} 
-  for (int i = dimX; i < dimW; i++)
-    for (int j = dimX; j < dimW; j++) 
-  	  coeff(i,j)=ZZ(i-dimX,j-dimX);
-  
-  return coeff;
-}')
-
-microbenchmark({coeff2=set_coeff(XX,XZ,ZZ)})
-
-coeff2=set_coeff(XX,XZ,ZZ)
-plot(diag(coeff),diag(coeff2))

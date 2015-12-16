@@ -1,4 +1,4 @@
-#' bafit function can fit various Bayesian models including rrBLUP, BayesA/B/C, antedependence models and etc. Input data can be either a `baData` object or specify the fixed and random effects seperately.
+#' bafit function can fit various Bayesian models including rrBLUP, BayesA/B/C, antedependence models and etc. Input data can be either a `baData` object or specify the fixed and random effects separately.
 #' @title Fitting various Bayesian models
 #' @param dataobj A list of baData including phenotypes, genotypes and etc.
 #' @param op A list of options to run Bayesian models
