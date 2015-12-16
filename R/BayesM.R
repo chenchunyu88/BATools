@@ -378,7 +378,7 @@ BayesM = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL,yNa=NULL)
 		
 		if((op$print_mcmc$piter!=0) & iter%%op$print_mcmc$piter==0)
 		{
-			tmp=paste("iter= ",iter," vare= ",round(vare,6), "scale= ", round(scalea,8),"timepercycle= ", round(timeSNP/iter,3), "estimated time left=", round(timeSNP/iter*(op$run_para$niter-iter),2),"seconds \n",sep=" ")
+			tmp=paste("iter= ",iter," vare= ",round(vare,6), "scale= ", round(scalea,8),"\ntimepercycle= ", round(timeSNP/iter,3), "estimated time left=", round(timeSNP/iter*(op$run_para$niter-iter),2),"seconds \n",sep=" ")
 			if(op$print_mcmc$print_to=="screen")
 			{
 				cat(tmp)

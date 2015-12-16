@@ -73,7 +73,7 @@ set_init.default <- function(y,Z,df=5,scale=NULL,vare=NULL,g=NULL,beta=NULL,pi_s
   
 	if(!(model%in%c("BayesB","SSVS"))) pi_snp=1
 		
-	init<-list(vare=vare,df=df,scale=scale,pi=pi_snp)
+	init<-list(vare=vare,df=df,scale=scale,g=g,beta=beta,pi=pi_snp)
 	if(model=="SSVS") init<-list(vare=vare,df=df,scale=scale,g=g,beta=beta,pi=pi_snp,c=c)
 	init
 }

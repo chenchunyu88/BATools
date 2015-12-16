@@ -1,7 +1,7 @@
 ---
 title: "BATools: An R Package for Whole Genomic Analysis with Bayesian Models"
 author: "Chunyu Chen, Lei Zhou, Robert J. Tempelman"
-date: "2015-09-23"
+date: "2015-10-06"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Vignette Title}
@@ -138,7 +138,7 @@ Then we can create the data object used in `BATools` by `create.baData`. In this
 
 ```r
 pheno<-data.frame(MSUPRP_sample$pheno[,,]) 
-geno<-MSUPRP_sample$geno[,1:500]
+geno<-MSUPRP_sample$geno[,seq(1,dim(MSUPRP_sample$geno)[2],20)] #[,1:500]
 ped<-MSUPRP_sample$pedigree
 map=MSUPRP_sample$map
 sex<-ped$sex
@@ -153,7 +153,7 @@ pig=create.baData(pheno=pheno,geno=geno,map=map,pedigree=ped,fixed=x,makeAinv=F)
 We choose to demonstrate how to fit BayesA using MCMC and EM. We start with MCMC:
 
 ```r
-init=list(df=5,scale=0.01,pi=1)
+init=set_init(pig,df=5,pi_snp=1,h2=0.5,c=NULL,model="BayesA",centered=T,trait="driploss")
 run_para=list(niter=5000,burnIn=2500,skip=10)
 print_mcmc=list(piter=500)
 update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
@@ -169,16 +169,26 @@ ba<-bafit(dataobj=pig,op=op,trait="driploss")
 ```
 
 ```
-## iter=  500  vare=  0.617604 scale=  0.0009667 timepercycle=  0 estimated time left= 1.8 
-## iter=  1000  vare=  0.602824 scale=  0.00070879 timepercycle=  0.001 estimated time left= 2.09 
-## iter=  1500  vare=  0.698644 scale=  0.00028016 timepercycle=  0 estimated time left= 1.66 
-## iter=  2000  vare=  0.589461 scale=  0.00085074 timepercycle=  0 estimated time left= 1.37 
-## iter=  2500  vare=  0.574677 scale=  0.00089771 timepercycle=  0 estimated time left= 1.1 
-## iter=  3000  vare=  0.491537 scale=  0.00032364 timepercycle=  0 estimated time left= 0.86 
-## iter=  3500  vare=  0.607441 scale=  0.00066083 timepercycle=  0 estimated time left= 0.64 
-## iter=  4000  vare=  0.596305 scale=  0.00037768 timepercycle=  0 estimated time left= 0.42 
-## iter=  4500  vare=  0.551192 scale=  0.00092832 timepercycle=  0 estimated time left= 0.21 
-## iter=  5000  vare=  0.401027 scale=  0.00104794 timepercycle=  0 estimated time left= 0
+## iter=  500  vare=  0.432924 scale=  0.0004069 
+## timepercycle=  0.001 estimated time left= 3.12 seconds 
+## iter=  1000  vare=  0.366249 scale=  0.00056412 
+## timepercycle=  0.001 estimated time left= 2.78 seconds 
+## iter=  1500  vare=  0.385861 scale=  0.00039244 
+## timepercycle=  0.001 estimated time left= 2.46 seconds 
+## iter=  2000  vare=  0.358691 scale=  0.000336 
+## timepercycle=  0.001 estimated time left= 2.09 seconds 
+## iter=  2500  vare=  0.363131 scale=  0.00049178 
+## timepercycle=  0.001 estimated time left= 1.74 seconds 
+## iter=  3000  vare=  0.348773 scale=  0.00034089 
+## timepercycle=  0.001 estimated time left= 1.43 seconds 
+## iter=  3500  vare=  0.327509 scale=  0.00025024 
+## timepercycle=  0.001 estimated time left= 1.08 seconds 
+## iter=  4000  vare=  0.403936 scale=  0.00021155 
+## timepercycle=  0.001 estimated time left= 0.73 seconds 
+## iter=  4500  vare=  0.307009 scale=  0.00049487 
+## timepercycle=  0.001 estimated time left= 0.37 seconds 
+## iter=  5000  vare=  0.36142 scale=  0.00037677 
+## timepercycle=  0.001 estimated time left= 0 seconds
 ```
 
 ```r
@@ -190,15 +200,15 @@ ba
 ## 
 ## estimated fixed effects:
 ##    female      male 
-## 0.9749968 0.8689422 
+## 1.0076589 0.8685423 
 ## 
 ## estimated hyperparameters:
-##         vare         varg 
-## 0.5203206886 0.0006049592 
+##         vare        scale 
+## 0.3807336238 0.0003754588 
 ## 
 ## effective sample size for hyperparameters: 
-##      vare      varg 
-## 500.00000  11.46826
+##     vare    scale 
+## 99.05445 14.79361
 ```
 
 ###Graphics
@@ -218,28 +228,34 @@ To use the EM algorithm in `BATools`, we first run an analysis using rrBLUP:
 
 ```r
 ##################run rrBLUP REML#####################
-init=list(df=NULL,scale=NULL,vare=NULL)
+init=set_init(pig,df=5,scale=NULL,vare=NULL,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",
+              centered=T,trait="driploss")
 run_para=list(maxiter=100)
 update_para=list(df=FALSE,scale=TRUE)
 op<-create.options(model="rrBLUP",method="EM",ante=FALSE,priors=NULL,init=init,
-    update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
+update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
 
 rr<-bafit(dataobj=pig,op=op,trait="driploss")
 ```
 
 ```
 ## rrBLUP iter= 1 
-## Residual Variance is 0.5133895 Genetic Variance is 0.0006355719
+## Residual Variance is 0.3916505 Scale is 0.0004661316
+## Convergence criteria is 1e-04 and current value is 1e+10
 ## rrBLUP iter= 2 
-## Residual Variance is 0.5138686 Genetic Variance is 0.0006409364
+## Residual Variance is 0.3884433 Scale is 0.0005341798
+## Convergence criteria is 1e-04 and current value is 0.008258348
 ## rrBLUP iter= 3 
-## Residual Variance is 0.5138934 Genetic Variance is 0.0006406405
+## Residual Variance is 0.3900734 Scale is 0.0005310876
+## Convergence criteria is 1e-04 and current value is 0.004179042
 ## rrBLUP iter= 4 
-## Residual Variance is 0.5138917 Genetic Variance is 0.000640663
+## Residual Variance is 0.3899009 Scale is 0.0005317811
+## Convergence criteria is 1e-04 and current value is 0.0004426353
 ## rrBLUP iter= 5 
-## Residual Variance is 0.5138919 Genetic Variance is 0.0006406614
+## Residual Variance is 0.3899315 Scale is 0.00053166
+## Convergence criteria is 1e-04 and current value is 7.85073e-05
 ## 
-## rrBLUP converged after 5 iterations and the convergence critira is 2.489739e-07
+## rrBLUP converged after 5 iterations at 7.85073e-05
 ```
 
 ```r
@@ -251,44 +267,52 @@ rr
 ## 
 ## estimated fixed effects:
 ##   female     male 
-## 1.211052 1.103184 
+## 1.170468 1.040369 
+## 
+## SD
+##   female     male 
+## 1.302095 1.303128 
 ## 
 ## estimated hyperparameters:
-##         vare         varg 
-## 0.5138918681 0.0006406614
+##       vare      scale 
+## 0.38993150 0.00053166
 ```
 Then we use rrBLUP results as starting values for EM BayesA:
 
 ```r
-df_i=5
-scale_i=(df_i-2)/df_i*rr$hyper_est[2]
-init=list(df=df_i,scale=scale_i,vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,pi=1)
+init=set_init(pig,df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,
+              pi_snp=1,h2=0.5,model="BayesA",centered=T,trait="driploss",from="rrBLUP")
 run_para=list(maxiter=100)
 update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
 op<-create.options(model="BayesA",method="EM",ante=FALSE,priors=NULL,init=init,D="V",
-    update_para=update_para,run_para=run_para,save.at="BayesA",cv=NULL,print_mcmc=NULL)
+  update_para=update_para,run_para=run_para,save.at="BayesA",cv=NULL,print_mcmc=NULL)
 ba_em<-bafit(dataobj=pig,op=op,trait="driploss")
 ```
 
 ```
 ## BayesA EM iter= 1 
-## Residual Variance is 0.517764 Genetic Variance is 0.0005838004
+## Residual Variance is 0.3863244 Scale is 0.0005531357
+## Convergence criteria is 1e-04 and current value is 1e+10
 ## BayesA EM iter= 2 
-## Residual Variance is 0.5171621 Genetic Variance is 0.0006592904
+## Residual Variance is 0.3848432 Scale is 0.0006469239
+## Convergence criteria is 1e-04 and current value is 0.003856724
 ## BayesA EM iter= 3 
-## Residual Variance is 0.5168152 Genetic Variance is 0.0006660427
+## Residual Variance is 0.3837225 Scale is 0.0006529888
+## Convergence criteria is 1e-04 and current value is 0.002920448
 ## BayesA EM iter= 4 
-## Residual Variance is 0.5166557 Genetic Variance is 0.0006666532
+## Residual Variance is 0.3820295 Scale is 0.0006576012
+## Convergence criteria is 1e-04 and current value is 0.004441596
 ## BayesA EM iter= 5 
-## Residual Variance is 0.5166276 Genetic Variance is 0.0006667861
+## Residual Variance is 0.3818452 Scale is 0.0006579109
+## Convergence criteria is 1e-04 and current value is 0.0004826109
 ## BayesA EM iter= 6 
-## Residual Variance is 0.5166233 Genetic Variance is 0.0006668084
+## Residual Variance is 0.3816379 Scale is 0.0006585268
+## Convergence criteria is 1e-04 and current value is 0.0005430623
 ## BayesA EM iter= 7 
-## Residual Variance is 0.5166225 Genetic Variance is 0.0006668124
-## BayesA EM iter= 8 
-## Residual Variance is 0.5166224 Genetic Variance is 0.0006668131
+## Residual Variance is 0.3816101 Scale is 0.000658589
+## Convergence criteria is 1e-04 and current value is 7.292798e-05
 ## 
-## BayesA converged after 8 iterations and the convergence critira is 2.729907e-07
+## BayesA converged after 7 iterations at 7.292798e-05
 ```
 
 ```r
@@ -300,11 +324,15 @@ ba_em
 ## 
 ## estimated fixed effects:
 ##   female     male 
-## 1.211268 1.102378 
+## 1.168412 1.036599 
+## 
+## SD
+##   female     male 
+## 1.340235 1.341329 
 ## 
 ## estimated hyperparameters:
-##         vare         varg 
-## 0.5166223676 0.0006668131
+##        vare       scale 
+## 0.381610104 0.000658589
 ```
 ###Graphics
 Let's look at the estimated phenotypes v.s. true phenotypes for EM:
@@ -327,23 +355,33 @@ run_para=list(niter=2000,burnIn=1000,skip=1)
 print_mcmc=list(piter=200)
 update_para=list(df=F,scale=T,pi=T)
 priors=list(shape_scale=5,rate_scale=0.1,alphapi=1,betapi=9)
-op<-create.options(model="BayesC",method="MCMC",
+op<-create.options(model="SSVS",method="MCMC",
 ante=FALSE,priors=NULL,init=init,update_para=update_para,
-run_para=run_para,save.at="BayesCC",cv=NULL,print_mcmc=print_mcmc)
+run_para=run_para,save.at="SSVS",cv=NULL,print_mcmc=print_mcmc)
 bc<-bafit(dataobj=pig,op=op,trait="driploss")
 ```
 
 ```
-## iter=  200  vare=  0.6248 scale=  0.02515235 timepercycle=  0.001 estimated time left= 0.95 
-## iter=  400  vare=  0.429829 scale=  0.07978027 timepercycle=  0.001 estimated time left= 0.83 
-## iter=  600  vare=  0.508852 scale=  0.12238383 timepercycle=  0.001 estimated time left= 0.72 
-## iter=  800  vare=  0.498089 scale=  0.06532467 timepercycle=  0.001 estimated time left= 0.62 
-## iter=  1000  vare=  0.497922 scale=  0.01748966 timepercycle=  0.001 estimated time left= 0.51 
-## iter=  1200  vare=  0.568778 scale=  0.01598056 timepercycle=  0.001 estimated time left= 0.41 
-## iter=  1400  vare=  0.485576 scale=  0.0117588 timepercycle=  0.001 estimated time left= 0.31 
-## iter=  1600  vare=  0.493141 scale=  0.01304677 timepercycle=  0.001 estimated time left= 0.21 
-## iter=  1800  vare=  0.53983 scale=  0.02696047 timepercycle=  0.001 estimated time left= 0.1 
-## iter=  2000  vare=  0.788232 scale=  0.01792949 timepercycle=  0.001 estimated time left= 0
+## iter=  200  vare=  0.536829 scale=  0.29439797 
+## timepercycle=  0.001 estimated time left= 1.66 seconds 
+## iter=  400  vare=  0.595115 scale=  0.23640913 
+## timepercycle=  0.001 estimated time left= 1.45 seconds 
+## iter=  600  vare=  0.437507 scale=  0.29226811 
+## timepercycle=  0.001 estimated time left= 1.24 seconds 
+## iter=  800  vare=  0.479568 scale=  0.57186156 
+## timepercycle=  0.001 estimated time left= 1.07 seconds 
+## iter=  1000  vare=  0.36131 scale=  0.65779683 
+## timepercycle=  0.001 estimated time left= 0.89 seconds 
+## iter=  1200  vare=  0.423843 scale=  0.52539915 
+## timepercycle=  0.001 estimated time left= 0.73 seconds 
+## iter=  1400  vare=  0.456333 scale=  0.69004647 
+## timepercycle=  0.001 estimated time left= 0.55 seconds 
+## iter=  1600  vare=  0.390411 scale=  0.50739371 
+## timepercycle=  0.001 estimated time left= 0.37 seconds 
+## iter=  1800  vare=  0.373935 scale=  0.32093542 
+## timepercycle=  0.001 estimated time left= 0.19 seconds 
+## iter=  2000  vare=  0.470413 scale=  0.20767048 
+## timepercycle=  0.001 estimated time left= 0 seconds
 ```
 
 ```r
@@ -354,53 +392,55 @@ bc
 ## BATools analysis of trait: driploss 
 ## 
 ## estimated fixed effects:
-##    female      male 
-## 0.7660304 0.6738021 
+##   female     male 
+## 1.665812 1.530076 
 ## 
 ## estimated hyperparameters:
-##       vare       varg         pi 
-## 0.52041266 0.01695496 0.05496325 
+##        vare       scale          pi 
+## 0.410472946 0.452772665 0.001962844 
 ## 
 ## effective sample size for hyperparameters: 
-##       vare       varg         pi 
-## 137.962665  14.755601   6.819892
+##      vare     scale        pi 
+## 130.06907  17.07845  98.97089
 ```
 
 ```r
-scale_i=rr$hyper_est[2]/(1/1000*rr$hyper_est[2]*(1-bc$hyper_est[3])+bc$hyper_est[3]*rr$hyper_est[2])
-init=list(df=5,scale=scale_i,vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,pi=bc$hyper_est[3],c=1000)
+init=set_init(pig,df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],g=rr$ghat,beta=rr$betahat,
+              pi_snp=0.05,h2=0.5,c=1000,model="SSVS",centered=T,trait="driploss",from="rrBLUP")
 run_para=list(maxiter=100)
 update_para=list(df=FALSE,scale=TRUE,pi=T)
-op<-create.options(model="BayesC",method="EM",ante=FALSE,priors=NULL,init=init,
-    update_para=update_para,run_para=run_para,save.at="BayesC",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
+op<-create.options(model="SSVS",method="EM",ante=FALSE,priors=NULL,init=init,
+update_para=update_para,run_para=run_para,save.at="SSVS",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
 bc_em<-bafit(dataobj=pig,op=op,trait="driploss")
 ```
 
 ```
-## BayesC EM iter= 1 
-## Residual Variance is 0.7144196 Genetic Variance is 8.943218 pi is 0.00180786
-## BayesC EM iter= 2 
-## Residual Variance is 0.6409612 Genetic Variance is 4.471609 pi is 5.899198e-05
-## BayesC EM iter= 3 
-## Residual Variance is 0.5779692 Genetic Variance is 2.235805 pi is 1.889715e-06
-## BayesC EM iter= 4 
-## Residual Variance is 0.5405971 Genetic Variance is 1.117902 pi is 6.057554e-08
-## BayesC EM iter= 5 
-## Residual Variance is 0.5222646 Genetic Variance is 0.1946135 pi is 1.943242e-09
-## BayesC EM iter= 6 
-## Residual Variance is 0.5244976 Genetic Variance is 0.3849745 pi is 6.677803e-11
-## BayesC EM iter= 7 
-## Residual Variance is 0.5185562 Genetic Variance is 0.5210157 pi is 2.091794e-12
-## BayesC EM iter= 8 
-## Residual Variance is 0.5176154 Genetic Variance is 0.5535387 pi is 6.579907e-14
-## BayesC EM iter= 9 
-## Residual Variance is 0.5176008 Genetic Variance is 0.5546304 pi is 2.077079e-15
-## BayesC EM iter= 10 
-## Residual Variance is 0.5176014 Genetic Variance is 0.5546241 pi is 6.556435e-17
-## BayesC EM iter= 11 
-## Residual Variance is 0.5176014 Genetic Variance is 0.5546242 pi is 2.185478e-18
+## SSVS EM iter= 1 
+## Residual Variance is 0.435391 Scale is 0.02920585
+## Convergence criteria is 1e-04 and current value is 1e+10
+## SSVS EM iter= 2 
+## Residual Variance is 0.4393395 Scale is 0.06430095
+## Convergence criteria is 1e-04 and current value is 0.07953811
+## SSVS EM iter= 3 
+## Residual Variance is 0.4070716 Scale is 0.1329879
+## Convergence criteria is 1e-04 and current value is 0.1772093
+## SSVS EM iter= 4 
+## Residual Variance is 0.3837358 Scale is 0.2655403
+## Convergence criteria is 1e-04 and current value is 0.1775111
+## SSVS EM iter= 5 
+## Residual Variance is 0.3783207 Scale is 0.2394833
+## Convergence criteria is 1e-04 and current value is 0.05943913
+## SSVS EM iter= 6 
+## Residual Variance is 0.377587 Scale is 0.2433619
+## Convergence criteria is 1e-04 and current value is 0.008787261
+## SSVS EM iter= 7 
+## Residual Variance is 0.377706 Scale is 0.2429965
+## Convergence criteria is 1e-04 and current value is 0.0008555282
+## SSVS EM iter= 8 
+## Residual Variance is 0.3776931 Scale is 0.2430379
+## Convergence criteria is 1e-04 and current value is 9.64421e-05
 ## 
-## BayesC converged after 11 iterations and the convergence critira is 6.311663e-08
+## SSVS converged after 8 iterations at 9.64421e-05
 ```
 
 ```r
@@ -411,12 +451,16 @@ bc_em
 ## BATools analysis of trait: driploss 
 ## 
 ## estimated fixed effects:
-##   female     male 
-## 1.209711 1.100544 
+##    female      male 
+## 1.2033943 0.9734142 
+## 
+## SD
+##    female      male 
+## 0.9368899 0.9366963 
 ## 
 ## estimated hyperparameters:
-##         vare         varg           pi 
-## 5.176014e-01 5.546242e-01 2.185478e-18
+##        vare       scale          pi 
+## 0.377693117 0.243037886 0.002985153
 ```
 
 We can also compare the difference bewteen MCMC and EM for BayesC:
@@ -445,3 +489,104 @@ abline(a=0,b=1)
 ```
 
 ![BayesA_C_EM](figure/unnamed-chunk-12-1.png) 
+###BayesB
+
+```r
+init=set_init(pig,df=5,pi_snp=0.05,h2=0.5,c=NULL,model="BayesB",centered=T,trait="driploss")
+run_para=list(niter=2000,burnIn=100,skip=10)
+print_mcmc=list(piter=100,time_est=T,print_to="screen")
+update_para=list(df=F,scale=TRUE,pi=TRUE)
+op<-create.options(model="BayesB",method="MCMC",ante=FALSE,priors=NULL,init=init,
+update_para=update_para,run_para=run_para,save.at="BayesB",cv=NULL,print_mcmc=print_mcmc)
+
+bb<-bafit(dataobj=pig,op=op,trait="driploss")
+```
+
+```
+## iter=  100  vare=  0.423763 scale=  0.0048747 
+## timepercycle=  0.001 estimated time left= 1.56 seconds 
+## iter=  200  vare=  0.280101 scale=  0.00287471 
+## timepercycle=  0.001 estimated time left= 1.67 seconds 
+## iter=  300  vare=  0.397197 scale=  0.00256754 
+## timepercycle=  0.001 estimated time left= 1.73 seconds 
+## iter=  400  vare=  0.292023 scale=  0.00407976 
+## timepercycle=  0.001 estimated time left= 1.62 seconds 
+## iter=  500  vare=  0.333239 scale=  0.00278575 
+## timepercycle=  0.001 estimated time left= 1.6 seconds 
+## iter=  600  vare=  0.492323 scale=  0.00230333 
+## timepercycle=  0.001 estimated time left= 1.48 seconds 
+## iter=  700  vare=  0.306483 scale=  0.00213109 
+## timepercycle=  0.001 estimated time left= 1.42 seconds 
+## iter=  800  vare=  0.498594 scale=  0.00527824 
+## timepercycle=  0.001 estimated time left= 1.3 seconds 
+## iter=  900  vare=  0.499604 scale=  0.00230064 
+## timepercycle=  0.001 estimated time left= 1.18 seconds 
+## iter=  1000  vare=  0.439679 scale=  0.00243592 
+## timepercycle=  0.001 estimated time left= 1.07 seconds 
+## iter=  1100  vare=  0.5116 scale=  0.00187912 
+## timepercycle=  0.001 estimated time left= 0.96 seconds 
+## iter=  1200  vare=  0.432131 scale=  0.0040978 
+## timepercycle=  0.001 estimated time left= 0.85 seconds 
+## iter=  1300  vare=  0.370646 scale=  0.00263223 
+## timepercycle=  0.001 estimated time left= 0.74 seconds 
+## iter=  1400  vare=  0.436532 scale=  0.00052841 
+## timepercycle=  0.001 estimated time left= 0.64 seconds 
+## iter=  1500  vare=  0.471743 scale=  0.00077792 
+## timepercycle=  0.001 estimated time left= 0.55 seconds 
+## iter=  1600  vare=  0.25665 scale=  0.00151988 
+## timepercycle=  0.001 estimated time left= 0.44 seconds 
+## iter=  1700  vare=  0.494149 scale=  0.00290529 
+## timepercycle=  0.001 estimated time left= 0.33 seconds 
+## iter=  1800  vare=  0.385592 scale=  0.0041832 
+## timepercycle=  0.001 estimated time left= 0.22 seconds 
+## iter=  1900  vare=  0.465551 scale=  0.00263691 
+## timepercycle=  0.001 estimated time left= 0.11 seconds 
+## iter=  2000  vare=  0.432472 scale=  0.00410259 
+## timepercycle=  0.001 estimated time left= 0 seconds
+```
+
+
+GWA
+
+```r
+prr1<-get_pvalues(rr)
+prr2<-get_pvalues(rr,type="fixed")
+
+manhattan_plot(prr1,pig$map,threshold = 0.05,main="rrBLUP random effects test")
+```
+
+![GWA](figure/unnamed-chunk-14-1.png) 
+
+```r
+manhattan_plot(prr2,pig$map,threshold = 0.001,main="rrBLUP fixed effects test")
+```
+
+![GWA](figure/unnamed-chunk-14-2.png) 
+
+```r
+pba<-get_pvalues(ba_em,type="random")
+
+manhattan_plot(pba,pig$map,threshold = 0.05,main="BayesA random effect test")
+```
+
+![GWA](figure/unnamed-chunk-14-3.png) 
+
+```r
+pbc<-get_pvalues(bc_em,type="random")
+
+manhattan_plot(pbc,pig$map,threshold = 0.05,main="SSVS random effect test")
+```
+
+![GWA](figure/unnamed-chunk-14-4.png) 
+
+```r
+postprob_plot(bb$prob,pig$map,main="BayesB posterior probability")
+```
+
+![GWA](figure/unnamed-chunk-14-5.png) 
+
+```r
+postprob_plot(bc$phisave,pig$map,main="SSVS posterior probability")
+```
+
+![GWA](figure/unnamed-chunk-14-6.png) 

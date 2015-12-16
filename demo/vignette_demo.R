@@ -27,13 +27,13 @@ pig<-std_geno(pig_tmp,method="s") #centering the genotype matrix
 
 ##################run rrBLUP REML#####################
 init=set_init(pig,df=5,scale=NULL,vare=NULL,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",centered=T,trait="driploss")
-init=set_init(pig,df=5,scale=0.2,vare=2,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",centered=T,trait="driploss")
+#init=set_init(pig,df=5,scale=0.2,vare=2,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",centered=T,trait="driploss")
 
 
-init=set_init(pig,df=5,scale=0.5156796908,vare=0.0002319995,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",centered=T,trait="driploss")
+#init=set_init(pig,df=5,scale=0.5156796908,vare=0.0002319995,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",centered=T,trait="driploss")
 run_para=list(maxiter=100)
 priors=list(nu_e=-2,tau2_e=0,nu_s=-2,tau2_s=0) #REML like prior, change nu_e=-1 if you want to use Gelman's prior
-update_para=list(scale=F,vare=F)
+update_para=list(scale=T,vare=T)
 op<-create.options(model="rrBLUP",method="EM",ante=FALSE,priors=NULL,init=init,
     update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
 
@@ -74,7 +74,7 @@ baplot(dataobj=pig,BAout=ba,type="pre")
 baplot(dataobj=pig,BAout=ba,type="trace",op=op,iterStart = 1)
 
 ##################run BayesA EM#####################
-init=list(df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,pi=1)
+init=list(df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],g=rr$ghat,beta=rr$betahat,pi=1)
 run_para=list(maxiter=100)
 priors=list(nu_e=-2,tau2_e=0,nu_s=-2,tau2_s=0) 
 update_para=list(df=FALSE,scale=TRUE,pi=FALSE)

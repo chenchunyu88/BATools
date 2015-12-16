@@ -83,7 +83,7 @@ BayesE = function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL)
 	}
 	lambda=vare/scalea
 	if(is.null(op$init$g)) SNPeff = rep(0,nSNP) else SNPeff=op$init$g
-	if(is.null(op$init$beta)) fixedeff = rep(0,dimX) else fixedeff=op$init$b 
+	if(is.null(op$init$beta)) fixedeff = rep(0,dimX) else fixedeff=op$init$beta 
 	if(is.null(op$init$phi_est)) phi_est = rep(0,nSNP) else phi_est=op$init$phi_est
 	if(!is.null(op$init$pi)) pi_snp=op$init$pi
 	if(!is.null(op$init$c)) c=op$init$c

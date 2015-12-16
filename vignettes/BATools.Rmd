@@ -93,7 +93,7 @@ summary(MSUPRP_sample)
 Then we can create the data object used in `BATools` by `create.baData`. In this example we treat the sex as fixed effects
 ```{r}
 pheno<-data.frame(MSUPRP_sample$pheno[,,]) 
-geno<-MSUPRP_sample$geno[,1:500]
+geno<-MSUPRP_sample$geno[,seq(1,dim(MSUPRP_sample$geno)[2],20)] #[,1:500]
 ped<-MSUPRP_sample$pedigree
 map=MSUPRP_sample$map
 sex<-ped$sex
@@ -107,7 +107,7 @@ pig=create.baData(pheno=pheno,geno=geno,map=map,pedigree=ped,fixed=x,makeAinv=F)
 ###Set up initial values for the model
 We choose to demonstrate how to fit BayesA using MCMC and EM. We start with MCMC:
 ```{r}
-init=list(df=5,scale=0.01,pi=1)
+init=set_init(pig,df=5,pi_snp=1,h2=0.5,c=NULL,model="BayesA",centered=T,trait="driploss")
 run_para=list(niter=5000,burnIn=2500,skip=10)
 print_mcmc=list(piter=500)
 update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
@@ -135,24 +135,24 @@ baplot(dataobj=pig,BAout=ba,type="trace",op=op)
 To use the EM algorithm in `BATools`, we first run an analysis using rrBLUP:
 ```{r fig.cap="rrBLUP Estimation"}
 ##################run rrBLUP REML#####################
-init=list(df=NULL,scale=NULL,vare=NULL)
+init=set_init(pig,df=5,scale=NULL,vare=NULL,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",
+              centered=T,trait="driploss")
 run_para=list(maxiter=100)
 update_para=list(df=FALSE,scale=TRUE)
 op<-create.options(model="rrBLUP",method="EM",ante=FALSE,priors=NULL,init=init,
-    update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
+update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
 
 rr<-bafit(dataobj=pig,op=op,trait="driploss")
 rr
 ```
 Then we use rrBLUP results as starting values for EM BayesA:
 ```{r fig.cap="EM Estimation"}
-df_i=5
-scale_i=(df_i-2)/df_i*rr$hyper_est[2]
-init=list(df=df_i,scale=scale_i,vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,pi=1)
+init=set_init(pig,df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,
+              pi_snp=1,h2=0.5,model="BayesA",centered=T,trait="driploss",from="rrBLUP")
 run_para=list(maxiter=100)
 update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
 op<-create.options(model="BayesA",method="EM",ante=FALSE,priors=NULL,init=init,D="V",
-    update_para=update_para,run_para=run_para,save.at="BayesA",cv=NULL,print_mcmc=NULL)
+  update_para=update_para,run_para=run_para,save.at="BayesA",cv=NULL,print_mcmc=NULL)
 ba_em<-bafit(dataobj=pig,op=op,trait="driploss")
 ba_em
 ```
@@ -178,12 +178,13 @@ ante=FALSE,priors=NULL,init=init,update_para=update_para,
 run_para=run_para,save.at="SSVS",cv=NULL,print_mcmc=print_mcmc)
 bc<-bafit(dataobj=pig,op=op,trait="driploss")
 bc
-scale_i=rr$hyper_est[2]/(1/1000*rr$hyper_est[2]*(1-bc$hyper_est[3])+bc$hyper_est[3]*rr$hyper_est[2])
-init=list(df=5,scale=scale_i,vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,pi=bc$hyper_est[3],c=1000)
+
+init=set_init(pig,df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],g=rr$ghat,beta=rr$betahat,
+              pi_snp=0.05,h2=0.5,c=1000,model="SSVS",centered=T,trait="driploss",from="rrBLUP")
 run_para=list(maxiter=100)
 update_para=list(df=FALSE,scale=TRUE,pi=T)
 op<-create.options(model="SSVS",method="EM",ante=FALSE,priors=NULL,init=init,
-    update_para=update_para,run_para=run_para,save.at="SSVS",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
+update_para=update_para,run_para=run_para,save.at="SSVS",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
 bc_em<-bafit(dataobj=pig,op=op,trait="driploss")
 bc_em
 ```
@@ -204,4 +205,36 @@ We can also compare the difference bewteen BayesA and BayesC for EM:
 ```{r fig.cap="BayesA_C_EM"}
 plot(ba$ghat,bc$ghat,xlab="BayesA",ylab="BayesC",main="BayesA v.s. BayesC in EM")
 abline(a=0,b=1)
+```
+###BayesB
+```{r fig.cap="BayesB"}
+init=set_init(pig,df=5,pi_snp=0.05,h2=0.5,c=NULL,model="BayesB",centered=T,trait="driploss")
+run_para=list(niter=2000,burnIn=100,skip=10)
+print_mcmc=list(piter=100,time_est=T,print_to="screen")
+update_para=list(df=F,scale=TRUE,pi=TRUE)
+op<-create.options(model="BayesB",method="MCMC",ante=FALSE,priors=NULL,init=init,
+update_para=update_para,run_para=run_para,save.at="BayesB",cv=NULL,print_mcmc=print_mcmc)
+
+bb<-bafit(dataobj=pig,op=op,trait="driploss")
+```
+
+
+GWA
+```{r fig.cap="GWA"}
+prr1<-get_pvalues(rr)
+prr2<-get_pvalues(rr,type="fixed")
+
+manhattan_plot(prr1,pig$map,threshold = 0.05,main="rrBLUP random effects test")
+manhattan_plot(prr2,pig$map,threshold = 0.001,main="rrBLUP fixed effects test")
+
+pba<-get_pvalues(ba_em,type="random")
+
+manhattan_plot(pba,pig$map,threshold = 0.05,main="BayesA random effect test")
+
+pbc<-get_pvalues(bc_em,type="random")
+
+manhattan_plot(pbc,pig$map,threshold = 0.05,main="SSVS random effect test")
+
+postprob_plot(bb$prob,pig$map,main="BayesB posterior probability")
+postprob_plot(bc$phisave,pig$map,main="SSVS posterior probability")
 ```

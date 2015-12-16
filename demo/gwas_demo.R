@@ -1,6 +1,6 @@
 #Vignette demo
 rm(list=ls())
-devtools::install("../BATools")
+#devtools::install("../BATools",vignette=T)
 library(BATools)
 library(regress)
 
@@ -10,6 +10,7 @@ summary(MSUPRP_sample)
 
 
 pheno<-data.frame(MSUPRP_sample$pheno[,,]) 
+#geno<-MSUPRP_sample$geno[,1:500]
 geno<-MSUPRP_sample$geno[,seq(1,dim(MSUPRP_sample$geno)[2],20)]
 ped<-MSUPRP_sample$pedigree
 map=MSUPRP_sample$map
@@ -39,17 +40,17 @@ rr<-bafit(dataobj=pig,op=op,trait="driploss") #about 5 minutes
 prr1<-get_pvalues(rr)
 prr2<-get_pvalues(rr,type="fixed")
 
-manhattan_plot(prr1,pig$map,threshold = 0.001,main="rrBLUP random effects test")
+manhattan_plot(prr1,pig$map,threshold = 0.05,main="rrBLUP random effects test")
 manhattan_plot(prr2,pig$map,threshold = 0.001,main="rrBLUP fixed effects test")
 
 
 ##################run BayesA EM#####################
-init=set_init(pig,df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,
+init=set_init(pig,df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],g=rr$ghat,beta=rr$betahat,
               pi_snp=1,h2=0.5,model="BayesA",centered=T,trait="driploss",from="rrBLUP")
 run_para=list(maxiter=100)
-priors=list(nu_e=-1,tau2_e=0,nu_s=-1,tau2_s=0) 
-update_para=list(df=FALSE,scale=TRUE,vare=T,pi=FALSE)
-op<-create.options(model="BayesA",method="EM",ante=FALSE,priors=priors,init=init,D="P",
+priors=list(nu_e=-2,tau2_e=0,nu_s=-2,tau2_s=0) 
+update_para=list(df=FALSE,scale=TRUE,vare=T)
+op<-create.options(model="BayesA",method="EM",ante=FALSE,priors=priors,init=init,D="V",
     update_para=update_para,run_para=run_para,save.at="BayesA",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
 
 ba_em<-bafit(dataobj=pig,op=op,trait="driploss")
