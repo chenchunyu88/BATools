@@ -2,8 +2,6 @@
 
 This package implements Bayesian model using  Markov Chain Monte Carlo (MCMC) and expectation maximization (EM) algorithm for various Bayesian models.
 
-The window based approach presented at ICGQ5 will be uploaded in the next few day. Contact Chunyu Chen at chenchunyu88@gmail.com for more information. 
-
 The package is under developement, but it is functional.
 
 To install the package you can follow the 
