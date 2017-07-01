@@ -1,6 +1,6 @@
 ---
 title: "BATools: An R Package for Whole Genomic Analysis with Bayesian Models"
-author: "Chunyu Chen, Lei Zhou, Robert J. Tempelman"
+author: "Chunyu Chen, Robert J. Tempelman"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -80,7 +80,7 @@ $t_{j,j-1}\sim N\left ( \mu_t,\sigma^2_t  \right )$
 
 In `BATools`, we adhered the data structure of the object `gpData` in the `synbreed` package. The input and output objects are named as `baData` and `BAout`, which are R object class `list`. Therefore, users can directly use `synbreed` object as the input for `BATools`, and vice versa. More detailed explanation about `baData` and `BAout` can be found in the package manual file. 
 
-##Example
+
 We will use a toy dataset from the MSUPRP population to illustrate the use of `BATools`
 
 ###Load packages and data 
@@ -93,7 +93,7 @@ summary(MSUPRP_sample)
 Then we can create the data object used in `BATools` by `create.baData`. In this example we treat the sex as fixed effects
 ```{r}
 pheno<-data.frame(MSUPRP_sample$pheno[,,]) 
-geno<-MSUPRP_sample$geno[,seq(1,dim(MSUPRP_sample$geno)[2],20)] #[,1:500]
+geno<-MSUPRP_sample$geno[,seq(1,dim(MSUPRP_sample$geno)[2],20)] 
 ped<-MSUPRP_sample$pedigree
 map=MSUPRP_sample$map
 sex<-ped$sex
@@ -109,7 +109,7 @@ We choose to demonstrate how to fit BayesA using MCMC and EM. We start with MCMC
 ```{r}
 init=set_init(pig,df=5,pi_snp=1,h2=0.5,c=NULL,model="BayesA",centered=T,trait="driploss")
 run_para=list(niter=5000,burnIn=2500,skip=10)
-print_mcmc=list(piter=500)
+print_mcmc=list(piter=2500)
 update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
 op<-create.options(model="BayesA",method="MCMC",ante=FALSE,priors=NULL,init=init,
   update_para=update_para,run_para=run_para,save.at="BayesA",cv=NULL,print_mcmc=print_mcmc)
@@ -126,29 +126,31 @@ ba
 
 
 We can obtain the traceplot for MCMC:
-```{r fig.cap="Traceplot"}
+```{r fig.cap=""}
 par(mar=c(2,2,2,2))
 baplot(dataobj=pig,BAout=ba,type="trace",op=op)
 ```
 
 ###EM algorithm
 To use the EM algorithm in `BATools`, we first run an analysis using rrBLUP:
-```{r fig.cap="rrBLUP Estimation"}
+```{r fig.cap=""}
 ##################run rrBLUP REML#####################
 init=set_init(pig,df=5,scale=NULL,vare=NULL,pi_snp=1,h2=0.5,c=NULL,model="rrBLUP",
               centered=T,trait="driploss")
 run_para=list(maxiter=100)
 update_para=list(df=FALSE,scale=TRUE)
 op<-create.options(model="rrBLUP",method="EM",ante=FALSE,priors=NULL,init=init,
-update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
+update_para=update_para,run_para=run_para,save.at="rrBLUP",
+cv=NULL,print_mcmc=NULL,convcrit=1E-4)
 
 rr<-bafit(dataobj=pig,op=op,trait="driploss")
 rr
 ```
+
 Then we use rrBLUP results as starting values for EM BayesA:
-```{r fig.cap="EM Estimation"}
+```{r fig.cap=""}
 init=set_init(pig,df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],g=rr$ghat,b=rr$betahat,
-              pi_snp=1,h2=0.5,model="BayesA",centered=T,trait="driploss",from="rrBLUP")
+            pi_snp=1,h2=0.5,model="BayesA",centered=T,trait="driploss",from="rrBLUP")
 run_para=list(maxiter=100)
 update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
 op<-create.options(model="BayesA",method="EM",ante=FALSE,priors=NULL,init=init,D="V",
@@ -156,6 +158,7 @@ op<-create.options(model="BayesA",method="EM",ante=FALSE,priors=NULL,init=init,D
 ba_em<-bafit(dataobj=pig,op=op,trait="driploss")
 ba_em
 ```
+
 ###Graphics
 Let's look at the estimated phenotypes v.s. true phenotypes for EM:
 
@@ -167,10 +170,10 @@ abline(a=0,b=1)
 
 ###BayesC
 Running BayesC is similar to running BayesA:
-```{r fig.cap="BayesC"}
+```{r fig.cap=""}
 init=list(df=5,scale=0.2,pi=0.1,c=1000)
-run_para=list(niter=2000,burnIn=1000,skip=1)
-print_mcmc=list(piter=200)
+run_para=list(niter=5000,burnIn=2500,skip=1)
+print_mcmc=list(piter=2500)
 update_para=list(df=F,scale=T,pi=T)
 priors=list(shape_scale=5,rate_scale=0.1,alphapi=1,betapi=9)
 op<-create.options(model="SSVS",method="MCMC",
@@ -179,48 +182,54 @@ run_para=run_para,save.at="SSVS",cv=NULL,print_mcmc=print_mcmc)
 bc<-bafit(dataobj=pig,op=op,trait="driploss")
 bc
 
-init=set_init(pig,df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],g=rr$ghat,beta=rr$betahat,
-              pi_snp=0.05,h2=0.5,c=1000,model="SSVS",centered=T,trait="driploss",from="rrBLUP")
+init=set_init(pig,df=5,scale=rr$hyper_est[2],vare=rr$hyper_est[1],
+g=rr$ghat,beta=rr$betahat,pi_snp=0.05,h2=0.5,c=1000,model="SSVS",
+centered=T,trait="driploss",from="rrBLUP")
 run_para=list(maxiter=100)
 update_para=list(df=FALSE,scale=TRUE,pi=T)
-op<-create.options(model="SSVS",method="EM",ante=FALSE,priors=NULL,init=init,
-update_para=update_para,run_para=run_para,save.at="SSVS",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
+op<-create.options(model="SSVS",method="EM",ante=FALSE,priors=NULL,
+      init=init,update_para=update_para,run_para=run_para,save.at="SSVS",
+      cv=NULL,print_mcmc=NULL,convcrit=1E-4)
 bc_em<-bafit(dataobj=pig,op=op,trait="driploss")
 bc_em
 ```
 
 We can also compare the difference bewteen MCMC and EM for BayesC:
-```{r fig.cap="BayesC"}
+```{r fig.cap=""}
 plot(bc$ghat,bc_em$ghat,xlab="MCMC",ylab="EM",main="BayesC MCMC v.s. EM")
 abline(a=0,b=1)
 ```
 
 We can also compare the difference bewteen BayesA and BayesC for MCMC:
-```{r fig.cap="BayesA_C_MCMC"}
+```{r fig.cap=""}
 plot(ba$ghat,bc$ghat,xlab="BayesA",ylab="BayesC",main="BayesA v.s. BayesC in MCMC")
 abline(a=0,b=1)
 ```
 
 We can also compare the difference bewteen BayesA and BayesC for EM:
-```{r fig.cap="BayesA_C_EM"}
+```{r fig.cap=""}
 plot(ba$ghat,bc$ghat,xlab="BayesA",ylab="BayesC",main="BayesA v.s. BayesC in EM")
 abline(a=0,b=1)
 ```
+
 ###BayesB
-```{r fig.cap="BayesB"}
+```{r fig.cap=""}
 init=set_init(pig,df=5,pi_snp=0.05,h2=0.5,c=NULL,model="BayesB",centered=T,trait="driploss")
-run_para=list(niter=2000,burnIn=100,skip=10)
-print_mcmc=list(piter=100,time_est=T,print_to="screen")
+run_para=list(niter=5000,burnIn=2500,skip=10)
+print_mcmc=list(piter=2500,time_est=T,print_to="screen")
 update_para=list(df=F,scale=TRUE,pi=TRUE)
 op<-create.options(model="BayesB",method="MCMC",ante=FALSE,priors=NULL,init=init,
-update_para=update_para,run_para=run_para,save.at="BayesB",cv=NULL,print_mcmc=print_mcmc)
+update_para=update_para,run_para=run_para,save.at="BayesB",
+cv=NULL,print_mcmc=print_mcmc)
 
 bb<-bafit(dataobj=pig,op=op,trait="driploss")
 ```
 
 
-GWA
-```{r fig.cap="GWA"}
+###GWA
+We can use `get_pvalues` function to obtain p-values from EM algorithms.And the `manhattan_plot` function creates manhattan plots using those p-values.
+
+```{r fig.cap=""}
 prr1<-get_pvalues(rr)
 prr2<-get_pvalues(rr,type="fixed")
 

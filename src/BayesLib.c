@@ -867,7 +867,115 @@ SEXP BayesCC(SEXP cnSNP, SEXP cdimX, SEXP cnanim, SEXP cW, SEXP cWWdiag, SEXP ct
 	
 }
 
+/*
+SEXP BayesCCm(SEXP cnSNP, SEXP cdimX, SEXP cnanim, SEXP cW, SEXP cWWdiag, SEXP ctheta, SEXP cycorr, SEXP cvarq, SEXP cvarE,SEXP cpi,SEXP cphi,SEXP chratio,SEXP ca)
+{
+	//Marginalized version
+	double *xj, *W, *WWdiag, *theta, *ycorr, *varq,*phi,*hratio;
+	double rhs,varE,lhs,pi;
+	int j,i, nSNP, nanim,dimX;
+	double h1,h0,varG,a; //for phi
+    SEXP list;
+	
+  	GetRNGstate();
+	
+	nSNP=INTEGER_VALUE(cnSNP);
+	nanim=INTEGER_VALUE(cnanim);
+	dimX=INTEGER_VALUE(cdimX);
 
+	varE=NUMERIC_VALUE(cvarE); 
+	pi=NUMERIC_VALUE(cpi);
+	a=NUMERIC_VALUE(ca);
+		
+  	PROTECT(cW=AS_NUMERIC(cW));
+	W=NUMERIC_POINTER(cW); 
+        
+    PROTECT(cWWdiag=AS_NUMERIC(cWWdiag));
+    WWdiag=NUMERIC_POINTER(cWWdiag); 
+
+    PROTECT(ctheta=duplicate(AS_NUMERIC(ctheta)));
+    theta=NUMERIC_POINTER(ctheta);  
+	
+    PROTECT(cycorr=duplicate(AS_NUMERIC(cycorr)));
+    ycorr=NUMERIC_POINTER(cycorr);
+
+    PROTECT(cvarq=AS_NUMERIC(cvarq));
+    varq=NUMERIC_POINTER(cvarq);
+		
+	PROTECT(cphi=AS_NUMERIC(cphi));
+	phi=NUMERIC_POINTER(cphi);
+		
+	PROTECT(chratio=AS_NUMERIC(chratio));
+	hratio=NUMERIC_POINTER(chratio);
+
+
+    xj=(double *) R_alloc(nanim,sizeof(double));
+	
+
+
+	varG=varq[0];
+		
+	for(j=0; j<nSNP; j++)
+	{		
+		rhs=0;
+		//h1=log1p(WWdiag[j+dimX]*varG/varE)-log1p(WWdiag[j+dimX]*varG/varE/100);
+		//h2=1/(WWdiag[j+dimX]/varE+100/varG)-1/(WWdiag[j+dimX]/varE+1/varG);
+		//Rprintf("h1=%f\n",h1);
+		//Rprintf("h2=%f\n",h2);
+		Zy[j]=0;
+		for(i=0; i<nanim; i++)
+		{	
+			xj[i]=W[i+(j+dimX)*nanim];
+			ycorr[i]=ycorr[i]+theta[j+dimX]*xj[i];
+			rhs+=xj[i]*ycorr[i];
+			//Rprintf("rhs=%f\n",rhs);
+		}
+		//h1=Rf_dnorm4(theta[j+dimX],0,sqrt(varG),0);
+		//h0=Rf_dnorm4(theta[j+dimX],0,sqrt(varG/a),0);
+		//logh=0.5*(h1+h2*R_pow_di(rhs/varE,2));
+		//Rprintf("rhs=%f\n",rhs);
+		//Rprintf("vare=%f\n",varE);
+		
+		//Rprintf("h2=%f\n",h2);
+		//hratio[j]=R_pow(M_E,0.5*logh);
+		//Rprintf("hratio=%f\n",hratio);
+		logh=R_log(1+WWdiag[j+dimX]*varG/varE)-R_log(1+WWdiag[j+dimX]*varG/varE/a);
+		logh+=(rhs/varE)^2*(1/(WWdiag[j+dimX]/varE+a/varG)-1/(WWdiag[j+dimX]/varE-1/varG));
+		logh/=2;
+		hratio[j]=exp(logh);
+		phi[j]=rbinom(1,pi/(hratio[j]*(1-pi)+pi));
+		//phi[j]=rbinom(1,h1*pi);
+		//Rprintf("phi=%f\n",phi);
+		
+		rhs=rhs/varE;
+		lhs=WWdiag[j+dimX]/varE+1.0/(varG*((1-phi[j])/a+phi[j]));
+		theta[j+dimX]=rhs/lhs + sqrt(1.0/lhs)*rnorm(0,1) ;
+
+		for(i=0; i<nanim; i++)
+		{
+			ycorr[i]=ycorr[i]-theta[j+dimX]*xj[i];
+		}
+		
+	}  
+		
+    // Creating a list with 2 vector elements:
+	PROTECT(list = allocVector(VECSXP, 4));
+	// attaching theta vector to list:
+	SET_VECTOR_ELT(list, 0, ctheta);
+	// attaching ycorr vector to list:
+	SET_VECTOR_ELT(list, 1, cycorr);
+	
+	SET_VECTOR_ELT(list, 2, cphi);
+	
+	SET_VECTOR_ELT(list, 3, chratio);
+  	PutRNGstate();
+
+  	UNPROTECT(8);
+  	return(list);
+	
+}
+
+*/
 
 SEXP sampleeff(SEXP cp, SEXP cn, SEXP cZ, SEXP cZ2, SEXP ceff, SEXP cycorr, SEXP cvarE, SEXP cAvaru)
 {

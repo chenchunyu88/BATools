@@ -11,7 +11,7 @@ summary(MSUPRP_sample)
 
 pheno<-data.frame(MSUPRP_sample$pheno[,,]) 
 #geno<-MSUPRP_sample$geno[,1:500]
-geno<-MSUPRP_sample$geno[,seq(1,dim(MSUPRP_sample$geno)[2],20)]
+geno<-MSUPRP_sample$geno[,seq(1,dim(MSUPRP_sample$geno)[2],10)]
 ped<-MSUPRP_sample$pedigree
 map=MSUPRP_sample$map
 
@@ -35,13 +35,13 @@ update_para=list(scale=T,vare=T)
 op<-create.options(model="rrBLUP",method="EM",ante=FALSE,priors=NULL,init=init,
     update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
 
-rr<-bafit(dataobj=pig,op=op,trait="driploss") #about 5 minutes
+rrblup<-bafit(dataobj=pig,op=op,trait="driploss") #about 5 minutes
 
-prr1<-get_pvalues(rr)
-prr2<-get_pvalues(rr,type="fixed")
-
-manhattan_plot(prr1,pig$map,threshold = 0.05,main="rrBLUP random effects test")
-manhattan_plot(prr2,pig$map,threshold = 0.001,main="rrBLUP fixed effects test")
+random_effect_test<-get_pvalues(rrblup)
+fixed_effect_test<-get_pvalues(rrblup,type="fixed")
+par(mfrow=c(1,2))
+manhattan_plot(random_effect_test,pig$map,threshold = 0.05,main="rrBLUP random effects test")
+manhattan_plot(fixed_effect_test,pig$map,threshold = 0.001,main="rrBLUP fixed effects test")
 
 
 ##################run BayesA EM#####################
@@ -56,10 +56,12 @@ op<-create.options(model="BayesA",method="EM",ante=FALSE,priors=priors,init=init
 ba_em<-bafit(dataobj=pig,op=op,trait="driploss")
 ba_em
 
+#ba_ema<-BayesEA(dataobj=pig,op=op,trait="driploss")
+
 plot(ba_em$ghat,rr$ghat)
 abline(a=0,b=1)
 
-pba<-get_pvalues(ba_em,type="random")
+pba<-get_pvalues(ba_ema,type="random")
 
 manhattan_plot(pba,pig$map,threshold = 0.05,main="BayesA random effect test")
 
@@ -76,7 +78,7 @@ op<-create.options(model="SSVS",method="EM",ante=FALSE,priors=priors,init=init,
     update_para=update_para,run_para=run_para,save.at="SSVS",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
 
 bc_em<-bafit(dataobj=pig,op=op,trait="driploss")
-#bc_em<-BayesE(dataobj=pig,op=op,trait="driploss")
+#bc_ema<-BayesEA(dataobj=pig,op=op,trait="driploss")
 
 pbc<-get_pvalues(bc_em,type="random")
 

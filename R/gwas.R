@@ -12,12 +12,12 @@ varsnp<-function(zf,iG,iGCG){
 get_pvalues<-function(data,type="random"){
 	g<-data$ghat	
 	if(type=="random"){
-		varg<-diag(data$Cgg)
+		varg<-data$Cgg
 		zscore=g/sqrt(abs(varg))
 		pvalues=2*(1-pnorm(abs(zscore)))
 	}
 	if(type=="fixed"){
-		varg<-data$hyper_est[2]-diag(data$Cgg)
+		varg<-data$hyper_est[2]-data$Cgg
 		zscore=g/sqrt(abs(varg))
 		pvalues=2*(1-pnorm(abs(zscore)))
 	}

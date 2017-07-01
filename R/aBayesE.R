@@ -1,13 +1,12 @@
 #######################################################################################
 #######################################################################################
-#dataobj=pig;op=op;y=NULL;Z=NULL;G=NULL;X=NULL;trait="driploss"
-#Bayes EM approach
-BayesE = function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)  
+#Bayes EM approach using animal effect model
+aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)  
 #  startpi is defined by the proportion of markers that ARE associate with genes
 {   # START OF FUNCTION
 	
   pi_math = 3.14159265359	
-  #set.seed(op$seed)  
+  set.seed(op$seed)  
   whichNa=which(vtrain==FALSE)
   Z0=Z
   y0=y
@@ -19,9 +18,9 @@ BayesE = function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
     X=X[-whichNa,]
   }
   
-
-
-
+  
+  
+  
   nx=rownames(X)
   ng=rownames(Z)
   np=names(y)
@@ -57,22 +56,23 @@ BayesE = function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 	maxiter=op$run_para$maxiter
 	seed=op$seed
 	set.seed(seed)
-
-	W = cbind(X,Z)
+	
+	Za=diag(1,nanim)
+	Wa = cbind(X,Za)
 	#WWdiag = apply(W,2,crossprod) # diagonals are important
-	dimW = dim(W)[2]  # number of columns = # of location parameters
+	dimW = dim(Wa)[2]  # number of columns = # of location parameters
 
 	# initialize a few arrays
 	theta       = array(0,dimW)
 	# so this is the residual.
-	ycorr = y - as.vector(W%*%theta)   # adjust obs by everything before starting iterations
+	ycorr = y - as.vector(Wa%*%theta)   # adjust obs by everything before starting iterations
 
 	XX = crossprod(X)
-	XZ=  crossprod(X,Z)
-	ZX=  crossprod(Z,X)
-	ZZ=  crossprod(Z)
-	Wy=crossprod(W,y)
-	thetakeep = array(0,ncol(W))
+	XZa=  crossprod(X,Za)
+	ZaX=  t(XZa)
+	ZZa=  crossprod(Za)
+	Wya=crossprod(Wa,y)
+	thetakeep_a = array(0,ncol(Wa))
 	convcrit = op$convcrit
 	convcurr = 1E10
 
@@ -84,9 +84,6 @@ BayesE = function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 	derivAI=matrix(0,2,1)
 	informAI=matrix(0,2,2)
 	iter=0
-	#vare=rb$Ve
-	#scalea=rb$Vu
-	#lambda=1000000
 	##########start BayesEM###########
 	while (abs(convcurr) > convcrit)
 	{
@@ -97,29 +94,34 @@ BayesE = function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 			h1=dnorm(SNPeff,mean=0,sd=sqrt(scalea))
 			h0=dnorm(SNPeff,mean=0,sd=sqrt(scalea/c))
 			phi_est=pi_snp/((h0/h1)*(1-pi_snp)+pi_snp)
-			Dinv=diag((1-phi_est)*c+phi_est)
+			Dinv=as.numeric((1-phi_est)*c+phi_est)
 	  	}
 		
 		if(op$model=="BayesA")
 	  	{
-		    if(op$D=="V") Dinv=diag(as.numeric((def-1)/(def + SNPeff*SNPeff/scalea)))
-		  	else Dinv=diag(as.numeric((def+1)/(def + SNPeff*SNPeff/scalea)))
+		    if(op$D=="V") Dinv=(as.numeric((def+1)/(def + SNPeff*SNPeff/scalea)))
+		  	else Dinv=(as.numeric((def-1)/(def + SNPeff*SNPeff/scalea)))
 	  	}
 		
-		if(op$model=="rrBLUP") Dinv=diag(length(Z[1,]))
+		if(op$model %in% c("rrBLUP","GBLUP")) Dinv=rep(1,length(Z[1,]))
 
+		D=as.numeric(1/Dinv)
 		
-		ZZ_G=ZZ+Dinv*as.numeric(lambda)
-	  	coeff=rbind( cbind(XX,XZ),
-	               	 cbind(ZX,ZZ_G))
+		ZD=.Call("BATools_set_ZD",Z,D)
+		A=tcrossprod(ZD,Z)
+		Ainv=solve(A)
+		ZZ_G=ZZa+Ainv*as.numeric(lambda)
+		coeff=rbind( cbind(XX,XZa),
+		             cbind(ZaX,ZZ_G))
+	
 					 
 		if(op$update_para$scale || op$update_para$vare){
 		  	C=solve(coeff)
-		  	theta=C%*%Wy
-		  	SNPeff=theta[-(1:dimX)]
-		  	ycorr=y-W%*%theta
+		  	theta=C%*%Wya
+		  	a=theta[-(1:dimX)]
+		  	ycorr=y-Wa%*%theta
 		
-			if(op$model=="rrBLUP" && iter==1)
+			if(op$model %in% c("rrBLUP","GBLUP") && iter==1)
 		  	{
 		      vare=as.numeric(crossprod(y,ycorr)/(nrecords-rankX))
 		      scalea=vare/lambda   
@@ -130,13 +132,13 @@ BayesE = function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 		   		beta_pi=9
 		   		pi_snp=(sum(phi_est)+alpha_pi-1)/(alpha_pi+beta_pi+nSNP-2)
 			}
-		  	Cgg=C[(dimX+1):(dimX+nSNP),(dimX+1):(dimX+nSNP)]*vare
+		  	Caa=C[(dimX+1):(dimX+nanim),(dimX+1):(dimX+nanim)]*vare
 		
 		  	fsigma2e=ycorr/vare
-		  	WCW=W%*%C%*%t(W)
+		  	WCW=Wa%*%C%*%t(Wa)
 		  	Pfsigma2e=(fsigma2e-WCW%*%fsigma2e)/vare
 
-		  	fsigma2u=Z%*%SNPeff/scalea
+		  	fsigma2u=Za%*%a/scalea
 		  	Pfsigma2u=(fsigma2u-WCW%*%fsigma2u)/vare
 
 		  	informAI[1,1]=t(fsigma2e)%*%Pfsigma2e+nu_e*tau2_e/(vare^3)-(nu_e+2)/(2*vare^2)
@@ -145,17 +147,11 @@ BayesE = function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 		  	informAI[2,2]=t(fsigma2u)%*%Pfsigma2u+nu_s*tau2_s/(scalea^3)-(nu_s+2)/(2*scalea^2)
 		  	informAI=informAI/2
 	  	
-			if(op$model=="rrBLUP"){
-			    traceCgg=sum(diag(Cgg))	
-			    derivAI[1]=-0.5*((nrecords-rankX)/vare-(nSNP-traceCgg/scalea)/vare-crossprod(ycorr)/(vare^2))+nu_e*tau2_e/(2*vare^2)-(nu_e+2)/(2*vare)
-			    derivAI[2]=-0.5*(nSNP/scalea-traceCgg/(scalea^2)-crossprod(SNPeff)/(scalea^2))+nu_s*tau2_s/(2*scalea^2)-(nu_s+2)/(2*scalea)
-			}else{
-				traceCgg=sum(diag(Dinv%*%Cgg))
-				derivAI[1]=-0.5*((nrecords-rankX)/vare-(nSNP-traceCgg/scalea)/vare-crossprod(ycorr)/(vare^2)) +nu_e*tau2_e/(2*vare^2)-(nu_e+2)/(2*vare)
-				derivAI[2]=-0.5*(nSNP/scalea-traceCgg/(scalea^2)-t(SNPeff)%*%Dinv%*%SNPeff/(scalea^2)) +nu_s*tau2_s/(2*scalea^2)-(nu_s+2)/(2*scalea)
-			}
+			traceCaa=sum(rowSums(Ainv*Caa))
 		
-		
+			derivAI[1]=-0.5*((nanim-rankX)/vare-(nanim-traceCaa/scalea)/vare-crossprod(ycorr)/(vare^2))+nu_e*tau2_e/(2*vare^2)-(nu_e+2)/(2*vare)
+			derivAI[2]=-0.5*(nanim/scalea-traceCaa/(scalea^2)-t(a)%*%Ainv%*%a/(scalea^2)) +nu_s*tau2_s/(2*scalea^2)-(nu_s+2)/(2*scalea)
+	
 
 		  	vardiff=solve(informAI)%*%derivAI
 		  	if(op$update_para$vare){
@@ -176,10 +172,10 @@ BayesE = function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 			  	}	
 			}
 		}else{
-			theta=solve(coeff,Wy)
-			SNPeff=theta[-(1:dimX)]
+			theta=solve(coeff,Wya)
+			a=theta[-(1:dimX)]
 		}
-
+		  SNPeff=D*(t(Z)%*%(Ainv%*%a))
 	  	if(iter%%4==0){
 			scalea=as.numeric(scalea-(scalea-tscale[iter-1])^2/(scalea-2*tscale[iter-1]-tscale[iter-2]))
 			vare=as.numeric(vare-(vare-tvare[iter-1])^2/(vare-2*tvare[iter-1]-tvare[iter-2]))
@@ -189,9 +185,9 @@ BayesE = function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 	  	lambda = as.numeric(vare/scalea);
 	  	#gamma = 1/lambda;
 
-		if(op$model=="SSVS") cat("SSVS EM iter=",iter,"\n")
-		if(op$model=="BayesA") cat("BayesA EM iter=",iter,"\n")
-		if(op$model=="rrBLUP")  cat("rrBLUP iter=",iter,"\n")
+		if(op$model=="SSVS") cat("SSVS MAP iter=",iter,"\n")
+		if(op$model=="BayesA") cat("BayesA MAP iter=",iter,"\n")
+		if(op$model %in% c("rrBLUP","GBLUP"))  cat("GBLUP iter=",iter,"\n")
 		cat ("Residual Variance is ",vare,sep="")
 		cat (" Scale is ",scalea,sep="")
 		if(op$model=="BayesC") cat (" pi is ",pi_snp,sep="")
@@ -202,7 +198,7 @@ BayesE = function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 	  	tscale[iter]=scalea
 	  	tvare[iter]=vare
 		if(op$model=="SSVS") tpi[iter]=pi_snp
-	  	thetakeep = cbind(thetakeep,theta)            #keep iterate
+	  	thetakeep_a = cbind(thetakeep_a,theta)            #keep iterate
 	  	if(iter>1) {
 			if(op$update_para$scale || op$update_para$vare) convcurr=sqrt(sum(vardiff^2)/(vare^2+scalea^2))
 			else convcurr=crossprod(SNPeff-SNPeff0)/crossprod(SNPeff)
@@ -213,9 +209,10 @@ BayesE = function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 	}
 	if(op$model=="SSVS") cat("\nSSVS converged after ",iter," iterations at ",convcurr,"\n",sep="")
 	if(op$model=="BayesA") cat("\nBayesA converged after ",iter," iterations at ",convcurr,"\n",sep="")
-	if(op$model=="rrBLUP") cat("\nrrBLUP converged after ",iter," iterations at ",convcurr,"\n",sep="")
+	if(op$model%in%c("rrBLUP","GBLUP")) cat("\n GBLUP converged after ",iter," iterations at ",convcurr,"\n",sep="")
 	
-	yhat=X%*%theta[1:dimX]+Z%*%SNPeff
+	
+	yhat=X0%*%theta[1:dimX]+Z0%*%SNPeff
 	
 	betahat=theta[1:dimX]
 	if(op$update_para$scale || op$update_para$vare) sdbeta=sqrt(diag(C[1:dimX,1:dimX]))
@@ -231,39 +228,51 @@ BayesE = function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 		hyper_est=c(vare,scalea)
 		names(hyper_est)=c("vare","scale")
 	}
-	if(op$model=="rrBLUP"){
+	if(op$model %in% c("rrBLUP","GBLUP")){
 		hyper_est=c(vare,scalea)
 		names(hyper_est)=c("vare","scale")
 	}
 	
 	if(op$model=="BayesA"){
 	  meanvarg=(SNPeff^2+def*scalea)/(def+1)
-	  Dinv=diag(1/meanvarg*(1-2*SNPeff^2/(def+1)/meanvarg))
-	  ZZ_G=ZZ/vare+Dinv
-	  coeff=rbind( cbind(XX/vare,XZ/vare),
-	               cbind(ZX/vare,ZZ_G))
-	  C=solve(coeff)
-	  Cgg=C[(dimX+1):(dimX+nSNP),(dimX+1):(dimX+nSNP)]
+	  Dinv=as.numeric(1/meanvarg*(1-2*SNPeff^2/(def+1)/meanvarg))
 	}
 	
 	if(op$model=="SSVS"){
 	  h1=dnorm(SNPeff,mean=0,sd=sqrt(scalea))
 	  h0=dnorm(SNPeff,mean=0,sd=sqrt(scalea/c))
 	  tau=as.numeric(pi_snp/((h0/h1)*(1-pi_snp)+pi_snp))
-	  Dinv=diag((tau+c*(1-tau))/scalea-SNPeff^2*tau*(1-tau)*(1-c)^2/scalea^2)
-	  ZZ_G=ZZ/vare+Dinv
-	  coeff=rbind( cbind(XX/vare,XZ/vare),
-	               cbind(ZX/vare,ZZ_G))
-	  C=solve(coeff)
-	  Cgg=C[(dimX+1):(dimX+nSNP),(dimX+1):(dimX+nSNP)]
+	  Dinv=as.numeric((tau+c*(1-tau))/scalea-SNPeff^2*tau*(1-tau)*(1-c)^2/scalea^2)
+	  
 	}
-	dCgg=diag(Cgg)
-	save(SNPeff,iter,tscale,tvare,tpi,thetakeep,dCgg,theta,file = paste(op$save.at,op$seed,".RData",sep=""))
+	if(op$model %in% c("rrBLUP","GBLUP")) Dinv=diag(length(Z[1,]))
+	if(F)	{
+	  D=1/Dinv
+  
+	  ZD=set_ZD(Z,D)
+  	A=tcrossprod(ZD,Z)
+  	  Ainv=solve(A)
+
+  		ZZ_G=ZZa+Ainv*lambda
+ 	   coeff=rbind( cbind(XX,XZa),
+               cbind(ZaX,ZZ_G))
+
+    C=solve(coeff)
+  
+    Caa=C[(dimX+1):(dimX+nanim),(dimX+1):(dimX+nanim)]*vare
+  
+    AiVAi=Ainv%*%Caa%*%Ainv
+
+    AiVAiZD=AiVAi%*%ZD
+  
+    p2=rep(0,nSNP)
+      for(i in 1:nSNP) p2[i]=sum(ZD[,i]*AiVAiZD[,i])
+	}
+  dCgg=rep(0,nSNP) #compute the diagnonal only
+
+	save(SNPeff,iter,tscale,tvare,tpi,thetakeep_a,dCgg,theta,file = paste(op$save.at,op$seed,".RData",sep=""))
 	
- 	if(op$poly)
-	{
-		BAout<-list(betahat=betahat,ghat=SNPeff, yhat=theta[1]+Z%*%SNPeff+Zu%*%SNPeffBLUP_u,uhat=SNPeffBLUP_u,hypers=c(vare,scalea),Ginv=Ainv,Cgg=dCgg,sdbeta=sdbeta,model=op$model,df=def)
-	}else BAout<-list(betahat=betahat,ghat=SNPeff, yhat=yhat,hyper_est=hyper_est,Cgg=dCgg,pi_snp=pi_snp,phi_est=phi_est,idx=idx,trait=trait,iter=iter,sdbeta=sdbeta,model=op$model,df=def)
+   BAout<-list(betahat=betahat,ghat=SNPeff, yhat=yhat,y=y0,train=vtrain,hyper_est=hyper_est,Cgg=dCgg,pi_snp=pi_snp,phi_est=phi_est,idx=idx,iter=iter,sdbeta=sdbeta,model=op$model,df=def)
   
   	class(BAout)="ba"
   	return(BAout)	
