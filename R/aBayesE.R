@@ -199,7 +199,7 @@ aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL)
 		if(op$model %in% c("rrBLUP","GBLUP"))  cat("GBLUP iter=",iter,"\n")
 		cat ("Residual Variance is ",vare,sep="")
 		cat (" Scale is ",scalea,sep="")
-		if(op$model=="BayesC") cat (" pi is ",pi_snp,sep="")
+		if(op$model=="SSVS") cat (" pi is ",pi_snp,sep="")
 		cat ("\n")
 		
 		

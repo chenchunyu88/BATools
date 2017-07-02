@@ -5,19 +5,19 @@
 \title{Fitting various Bayesian models}
 \usage{
 baFit(formula, data, geno, genoid, randomFormula = NULL, map = NULL,
-  PedA = NULL, options = NULL, train = NULL, GWA = c("No", "SNP",
+  PedAinv = NULL, options = NULL, train = NULL, GWA = c("No", "SNP",
   "Win"))
 }
 \arguments{
-\item{dataobj}{A list of baData including phenotypes, genotypes and etc.}
+\item{formula}{A list of baData including phenotypes, genotypes and etc.}
 
-\item{op}{A list of options to run Bayesian models}
+\item{data}{A list of options to run Bayesian models}
 
-\item{y}{A numeric vector of phenotypes}
+\item{geno}{A numeric vector of phenotypes}
 
-\item{A}{matrix of genotypes}
+\item{genoid}{matrix of genotypes}
 
-\item{trait}{A string indicating the trait for analysis}
+\item{randomFormula}{A string indicating the trait for analysis}
 }
 \value{
 The result of the analysis as a `ba` object, a list of estimate of fixed and random effects as well as variance components.
@@ -27,31 +27,6 @@ baFit function can fit various Bayesian models including rrBLUP, BayesA/B/C, ant
 }
 \examples{
 \dontrun{
-###########Loading and preparing data##########
-#This code demonstrate SSVS model
-rm(list=ls())
-library(BATools)
-data("Pig")
-#Standardize genotype matrix
-geno=std_geno(PigM,method="s",freq=PigAlleleFreq)
-init=set_init("driploss",data=PigPheno,geno=geno,"id",df=5,pi_snp=0.001,h2=0.5,c=1000,model="SSVS",centered=TRUE)
-#or set your own starting values using 
-#init=list(df=5,scale=0.01,pi=1) 
-run_para=list(niter=20000,burnIn=10000,skip=10)
-print_mcmc=list(piter=1000)
-update_para=list(df=FALSE,scale=TRUE,pi=F)
-op<-create.options(model="SSVS",method="MCMC",priors=NULL,init=init,
-                   update_para=update_para,run_para=run_para,save.at="SSVS",print_mcmc=print_mcmc)
-
-SSVS<-baTest(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op)
-SSVS
-#### Cross-validation using BATools
-set.seed(1234)
-PigPheno=createCV(data = PigPheno,k=5,"driploss")
-cvSSVS<-baTest(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1)
-plot(cvSSVS)
-cvSSVS
-
 #For GBLUP/rrBLUP:
 demo(GBLUP)
 demo(RR)

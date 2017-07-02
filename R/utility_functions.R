@@ -180,6 +180,31 @@ man_plot_pvalue<-function(ba,type=c("SNP","Win"), col = c("black", "red"),ylim=c
   lns <- (by(Chromsome_id,Chromsome_id , length))
   axis(1, at = c(0, cumsum(lns)[-length(lns)]) + as.vector(lns/2), labels = names(lns))
   box()
-  threshold=ifelse(ba$model %in%c("GBLUP","rrBLUP") ,0.05/length(p),0.05)
+  threshold=ifelse(ba$model %in%c("GBLUP","rrBLUP","ssGBLUP") ,0.05/length(p),0.05)
   abline(h = -log(threshold, 10), lwd = 2, col = "green")
+}
+
+
+get_full_rank_X<-function(X,y){
+  
+  n <- length(y)
+  Xcolnames <- dimnames(X)[[2]]
+  Xrownames <-rownames(X)
+  if(is.null(Xcolnames)) {
+    Xcolnames <- paste("X.column",c(1:dim(as.matrix(X))[2]),sep="")
+  }
+  
+  X <- matrix(X, n, length(X)/n)
+  XtX=crossprod(X)
+  qr <- qr(XtX)
+  rankQ <- n-qr$rank
+  if(qr$rank) {
+    X <- matrix(X[, qr$pivot[1:qr$rank]],n,qr$rank)
+    Xcolnames <- Xcolnames[qr$pivot[1:qr$rank]]
+  } else {
+    cat("\nERROR: X has rank 0\n\n")
+  }
+  colnames(X)=Xcolnames
+  rownames(X)=Xrownames
+  return(X)
 }

@@ -50,14 +50,15 @@
 #' @param ncore  \code{numeric}, the number of cpu cores for the analysis
 #' @param seed \code{numeric}, seed for random number generator
 #' @param convcrit \code{numeric}, convergence criteria for EM, default is 1E-4
-create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ssBayesA","ssBayesB","ssSSVS",
-                                   "anteBayesA","anteBayesB","anteSSVS","IWBayesA"),method=c("MCMC","MAP","REML"),
+create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ssGBLUP","ssBayesA","ssBayesB","ssSSVS",
+                                   "anteBayesA","anteBayesB","anteSSVS","IWBayesA"),method=c("MCMC","MAP","REML"),ssGBLUPvar=c("homVAR","hetVAR"),
                                     priors=NULL,init=NULL,D="V",update_para=NULL,
                                     run_para=NULL,save.at=NULL,print_mcmc=NULL,ncore=1,seed=1,convcrit=1E-4){
 
     model<-match.arg(model)
     method<-match.arg(method)
-  	
+    ssGBLUPvar<-match.arg(ssGBLUPvar)
+   
   	
   	#define methods
   	if(model=="GBLUP") methods="REML"
@@ -270,7 +271,7 @@ create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ss
 		ncore=1
 	}
   	# return object of class 'options'
-	obj=list(model=model,method=method,priors=priors,init=init,D=D,update_para=update_para,
+	obj=list(model=model,method=method,priors=priors,init=init,D=D,ssGBLUPvar=ssGBLUPvar,update_para=update_para,
 	                          run_para=run_para,save.at=save.at,print_mcmc=print_mcmc,ncore=ncore,seed=seed,convcrit=convcrit)
   	class(obj) <- "options"
   	return(obj)

@@ -1,4 +1,4 @@
-#' Pig Phenotypes
+#' MSUPRP example dataset
 #'
 #' A dataset containing the MSUPRP phenotypes
 #'
@@ -9,4 +9,4 @@
 #'   ...
 #' }
 #' @source \url{http://www.diamondse.info/}
-"PigPheno"
+"PigMap"

@@ -1,37 +1,17 @@
 #' baFit function can fit various Bayesian models including rrBLUP, BayesA/B/C, antedependence models and etc. Input data can be either a `baData` object or specify the fixed and random effects seperately.
 #' @title Fitting various Bayesian models
-#' @param dataobj A list of baData including phenotypes, genotypes and etc.
-#' @param op A list of options to run Bayesian models
-#' @param y A numeric vector of phenotypes
-#' @param A matrix of genotypes
-#' @param trait A string indicating the trait for analysis
+#' @param formula A list of baData including phenotypes, genotypes and etc.
+#' @param data A list of options to run Bayesian models
+#' @param geno A numeric vector of phenotypes
+#' @param genoid matrix of genotypes
+#' @param randomFormula A string indicating the trait for analysis
+#' @param map
+#' @param PedAinv
+#' @param options
+#' @param train
+#' @param GWA
 #' @return The result of the analysis as a `ba` object, a list of estimate of fixed and random effects as well as variance components.
 #' @examples \dontrun{
-#' ###########Loading and preparing data##########
-#' #This code demonstrate SSVS model
-#' rm(list=ls())
-#' library(BATools)
-#' data("Pig")
-#' #Standardize genotype matrix
-#' geno=std_geno(PigM,method="s",freq=PigAlleleFreq)
-#' init=set_init("driploss",data=PigPheno,geno=geno,"id",df=5,pi_snp=0.001,h2=0.5,c=1000,model="SSVS",centered=TRUE)
-#' #or set your own starting values using 
-#' #init=list(df=5,scale=0.01,pi=1) 
-#' run_para=list(niter=20000,burnIn=10000,skip=10)
-#' print_mcmc=list(piter=1000)
-#' update_para=list(df=FALSE,scale=TRUE,pi=F)
-#' op<-create.options(model="SSVS",method="MCMC",priors=NULL,init=init,
-#'                    update_para=update_para,run_para=run_para,save.at="SSVS",print_mcmc=print_mcmc)
-#' 
-#' SSVS<-baTest(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op)
-#' SSVS
-#' #### Cross-validation using BATools
-#' set.seed(1234)
-#' PigPheno=createCV(data = PigPheno,k=5,"driploss")
-#' cvSSVS<-baTest(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1)
-#' plot(cvSSVS)
-#' cvSSVS
-#' 
 #' #For GBLUP/rrBLUP:
 #' demo(GBLUP)
 #' demo(RR)
@@ -51,7 +31,7 @@
 #' @export
 #' @useDynLib BATools
 baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
-                 PedA=NULL,options=NULL,train=NULL,GWA=c("No","SNP","Win")){
+                 PedAinv=NULL,options=NULL,train=NULL,GWA=c("No","SNP","Win")){
   GWA<-match.arg(GWA)
   if(GWA!="No") {
     if(is.null(map)) stop("provide map for GWA")
@@ -67,11 +47,22 @@ baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
   if(is.null(options)) cat("no options inputed, use the default options.\n")
   
   if(substr(options$model,1,2)=="ss" | substr(options$model,5,6)=="ss"){
-    if(is.null(PedA)) stop("Pedigree based additive relationship matrix is required for single-step approach")
-    
+    if(is.null(PedAinv)) stop("Inverse of pedigree based additive relationship matrix is required for single-step approach")
+    if(nrow(data)!=nrow(PedAinv)){
+      A=Matrix::solve(PedAinv,sparse=TRUE,tol=1e-16)
+      A=as.matrix(A)
+      colnames(A)=rownames(A)=colnames(PedAinv)
+      A=A[id,id]
+      Ainv=solve(A)
+    }else{
+      Ainv=as.matrix(PedAinv)
+    }
+    idgeno<-id[which(id %in% rownames(geno))]
+    M<-geno[idgeno,]
   }else{
+    id<-id[which(id %in% rownames(geno))]
     M<-geno[id,]
-    if(nrow(M)<length(id)){
+    if(nrow(M)<nrow(data)){
       warning("The number of phenotyped individuals are larger than genotyped, 
               only genotyped individual will be used. Please consider to use single-step approach")
       data<- data %>% filter (id %in% rownames(M))
@@ -81,10 +72,14 @@ baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
   mf <- model.frame(formula, data = data, na.action = na.pass)
   mf <- eval(mf, parent.frame())
   y <- model.response(mf)
+  
+  if(nrow(M)>=length(y)) stop("Number of genotyped individual is not less than observation, cannot to single-step")
+  
   names(y)=id
   X <- model.matrix(formula,data=data)
   rownames(X)=id
   if (!is.null(randomFormula)) {
+    stop("random formula is not implemented yet, contact us for more information")
     reff <- model.frame(randomFormula, data = data, na.action = na.pass)
     reff <- eval(reff, parent.frame())
     Z<-list()
@@ -101,6 +96,7 @@ baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
   if(!is.null(train)){
     vtrain=model.frame(train, data = data, na.action = na.pass)
     vtrain <-as.vector(t(vtrain))
+    names(vtrain)=names(y)
   }else vtrain=NULL
   
   if(options$model=="rrBLUP"){
@@ -114,7 +110,9 @@ baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
   if(options$model=="GBLUP"){
     res<-aBayesE(op,y,M,X,vtrain,GWA,map)
   }
-  
+  if(options$model=="ssGBLUP"){
+    res<-ssBayesE(op,y,M,X,vtrain,GWA,map,Ainv)
+  }
   if(options$model=="BayesA"){
     if(options$method=="MCMC") res<-BayesM(op,y,M,X,vtrain,GWA,map)
     if(options$method =="MAP") {
@@ -180,7 +178,7 @@ baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
 
 #res<-baTest(driploss~sex,data=PigPheno)#,geno = PigM,~id,~litter+slgdt_cd,options=list(model="BayesA"))
 #' @export
-getMatrix<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,PedA=NULL,options=NULL,train=NULL){
+getMatrix<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,PedAinv=NULL,options=NULL,train=NULL){
   id<-model.frame(genoid,data=data,na.action = na.pass)
   id <- eval(id, parent.frame())
   id <-as.character(t(id))
@@ -188,12 +186,27 @@ getMatrix<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,PedA
   
   if(is.null(options)) cat("no options inputed, use the default options.\n")
   
+ 
+  
   if(substr(options$model,1,2)=="ss" | substr(options$model,5,6)=="ss"){
-    if(is.null(PedA)) stop("Pedigree based additive relationship matrix is required for single-step approach")
+    if(is.null(PedAinv)) stop("Pedigree based additive relationship matrix is required for single-step approach")
+    if(nrow(data)!=nrow(PedAinv)){
+      A=Matrix::solve(PedAinv,sparse=TRUE,tol=1e-16)
+      A=as.matrix(A)
+      colnames(A)=rownames(A)=colnames(PedAinv)
+      A=A[id,id]
+      Ainv=solve(A)
+    }else{
+      Ainv=as.matrix(PedAinv)
+    }
+    idgeno<-id[which(id %in% rownames(geno))]
+    M<-geno[idgeno,]
+    if(GWA!="No" && !is.null(vtrain)) stop("Cannot do both GWA and cross-validation at the same time")
     
   }else{
+    id<-id[which(id %in% rownames(geno))]
     M<-geno[id,]
-    if(nrow(M)<length(id)){
+    if(nrow(M)<nrow(data)){
       warning("The number of phenotyped individuals are larger than genotyped, 
               only genotyped individual will be used. Please consider to use single-step approach")
       data<- data %>% filter (id %in% rownames(M))
@@ -223,8 +236,9 @@ getMatrix<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,PedA
   if(!is.null(train)){
     vtrain=model.frame(train, data = data, na.action = na.pass)
     vtrain <-as.vector(t(vtrain))
+    names(vtrain)=names(y)
   }else vtrain=NULL
-  list(y=y,X=X,M=M,Z=Z,id=id,vtrain=vtrain)
+  list(y=y,X=X,M=M,Z=Z,id=id,vtrain=vtrain,Ainv=Ainv)
   }
 
 
@@ -243,7 +257,7 @@ getMatrix<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,PedA
   if(interactive())
   {
     packageStartupMessage(paste("Package 'BATools', ", BATools.version, ". ",sep=""),appendLF=TRUE)
-    packageStartupMessage("Type 'help(BATools)' for summary information",appendLF=TRUE)
+    packageStartupMessage("Type 'help(BATools)' for summary information and citations",appendLF=TRUE)
   }
   ###Add citation infomation
   invisible()

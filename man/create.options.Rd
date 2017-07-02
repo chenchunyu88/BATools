@@ -5,8 +5,8 @@
 \title{create \code{\link{op}} object}
 \usage{
 create.options(model = c("GBLUP", "rrBLUP", "BayesA", "BayesB", "SSVS",
-  "ssBayesA", "ssBayesB", "ssSSVS", "anteBayesA", "anteBayesB", "anteSSVS",
-  "IWBayesA"), method = c("MCMC", "MAP", "REML"), priors = NULL,
+  "ssGBLUP", "ssBayesA", "ssBayesB", "ssSSVS", "anteBayesA", "anteBayesB",
+  "anteSSVS", "IWBayesA"), method = c("MCMC", "MAP", "REML"), priors = NULL,
   init = NULL, D = "V", update_para = NULL, run_para = NULL,
   save.at = NULL, print_mcmc = NULL, ncore = 1, seed = 1,
   convcrit = 1e-04)

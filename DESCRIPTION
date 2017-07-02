@@ -10,6 +10,6 @@ Description: Bayesian Antedependence Model
 License: GPL-3
 Suggests: knitr
 VignetteBuilder: knitr
-LinkingTo: Rcpp
+LinkingTo: Rcpp, RcppArmadillo
 Imports: Rcpp
 RoxygenNote: 6.0.1.9000

@@ -5,3 +5,7 @@ set_ZD <- function(Z, D) {
     .Call('BATools_set_ZD', PACKAGE = 'BATools', Z, D)
 }
 
+get_pvalue <- function(U, V, G, Z, X) {
+    .Call('BATools_get_pvalue', PACKAGE = 'BATools', U, V, G, Z, X)
+}
+
