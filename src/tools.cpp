@@ -1,5 +1,6 @@
 #include <Rcpp.h>
 using namespace Rcpp;
+
 // [[Rcpp::export]]
 NumericVector set_ZD(NumericMatrix Z,NumericVector D) {
   int  nanim = Z.nrow(),nSNP=Z.ncol();
@@ -10,3 +11,6 @@ NumericVector set_ZD(NumericMatrix Z,NumericVector D) {
       ZD(i,j)=Z(i,j)*D[j]; 
   return ZD;
 }
+
+
+

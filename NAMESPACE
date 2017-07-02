@@ -2,10 +2,12 @@
 
 S3method(plot,ba)
 S3method(print,ba)
-export(baTest)
+export(baFit)
 export(create.options)
 export(createCV)
 export(getMatrix)
+export(man_plot_prob)
+export(man_plot_pvalue)
 export(set_init)
 export(std_geno)
 useDynLib(BATools)

@@ -1,6 +1,11 @@
 # BATools
 
-This package implements Bayesian model using  Markov Chain Monte Carlo (MCMC) and expectation maximization (EM) algorithm for various Bayesian models.
+This package implements Bayesian model using  Markov Chain Monte Carlo (MCMC) and Max a Posterior (MAP) algorithm for various Bayesian models for whole genome prediction (WGP) and genome-wide association (GWA).
+
+The data in the demo is explained in https://github.com/chenchunyu88/batoolsdata/blob/master/MSUPRP.ipynb.
+
+### Warning: 
+The demo example is just showing how the packages is work, please refer to these papers appear in `help(BATools)` for previous study results how the prediction accuarcy and GWA can be affected by different factors. In order for MCMC to convergence, change number of iteration and burn-In to 100,000 or greater depending on the size of your data.  
 
 The package is under developement, but it is functional.
 
@@ -21,13 +26,13 @@ A quick introduction: `vignette("BATools")`
 
 Help can be accessed by typing: `help(BATools)`, `help(bafit)`
 
-Example codes can be obtained by typing: `demo(vignette_demo)` and it's located in the demo folder
+Example codes can be found in demo/ folder. 
 
 ###Current working models:
-- rrBLUP based on REML and MCMC
-- BayesA based on EM and MCMC
-- SSVS (BayesC) based on EM and MCMC
-- BayesB based on MCMC
+- rrBLUP/GBLUP based on REML and MCMC for WGP and GWA
+- BayesA based on MAP and MCMC for WGP and GWA
+- SSVS based on MAP and MCMC for WGP and GWA
+- BayesB based on MCMC for WGP and GWA
 
 ###Future commits:
 1) ONGOING: 

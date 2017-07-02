@@ -149,7 +149,7 @@ create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ss
 	}	
 
         #define initial values
-	initial_names=c("df","scale","pi","varu","d","Sig","vare","g","beta","c")
+	initial_names=c("df","scale","pi","varu","d","Sig","vare","g","beta","c","post_prob")
 	initial_names_ante=c("df","scale","pi","varu","mut","vart")	   
 
 	if(is.null(init$df)) init$df=5

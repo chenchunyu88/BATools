@@ -1,7 +1,7 @@
 #######################################################################################
 #######################################################################################
 #Bayes EM approach using animal effect model
-aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)  
+aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL) 
 #  startpi is defined by the proportion of markers that ARE associate with genes
 {   # START OF FUNCTION
 	
@@ -18,7 +18,16 @@ aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
     X=X[-whichNa,]
   }
   
-  
+	if(GWA=="Win") {
+	  win=c()
+	  for(j in 1:max(map$idw)){
+	    win=append(win,sum(map$idw==j))
+	  }
+	  chr=map %>% distinct(chr,idw) %>% select(chr) %>% t %>% as.numeric
+	}else{
+	  win=NULL
+	  chr=NULL
+	}
   
   
   nx=rownames(X)
@@ -44,7 +53,7 @@ aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 	lambda=vare/scalea
 	if(is.null(op$init$g)) SNPeff = rep(0,nSNP) else SNPeff=op$init$g
 	if(is.null(op$init$beta)) fixedeff = rep(0,dimX) else fixedeff=op$init$beta 
-	if(is.null(op$init$phi_est)) phi_est = rep(0,nSNP) else phi_est=op$init$phi_est
+	if(is.null(op$init$post_prob)) phi_est = rep(0,nSNP) else phi_est=op$init$post_prob
 	if(!is.null(op$init$pi)) pi_snp=op$init$pi
 	if(!is.null(op$init$c)) c=op$init$c
 	
@@ -93,7 +102,7 @@ aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 	  	{
 			h1=dnorm(SNPeff,mean=0,sd=sqrt(scalea))
 			h0=dnorm(SNPeff,mean=0,sd=sqrt(scalea/c))
-			phi_est=pi_snp/((h0/h1)*(1-pi_snp)+pi_snp)
+			if(iter!=1 && is.null(phi_est)) phi_est=pi_snp/((h0/h1)*(1-pi_snp)+pi_snp)
 			Dinv=as.numeric((1-phi_est)*c+phi_est)
 	  	}
 		
@@ -127,8 +136,8 @@ aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 		      scalea=vare/lambda   
 		  	}
 		
-	  	   	if(op$update_para$pi){
-				alpha_pi=1
+	  		if(op$update_para$pi){
+				  alpha_pi=1
 		   		beta_pi=9
 		   		pi_snp=(sum(phi_est)+alpha_pi-1)/(alpha_pi+beta_pi+nSNP-2)
 			}
@@ -217,9 +226,10 @@ aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 	betahat=theta[1:dimX]
 	if(op$update_para$scale || op$update_para$vare) sdbeta=sqrt(diag(C[1:dimX,1:dimX]))
 		else {Cgg=NULL;sdbeta=NULL}
+	
 	names(betahat)=colnames(X)
 	
-	
+
 	if(op$model=="SSVS"){
 		hyper_est=c(vare,scalea,pi_snp)
 		names(hyper_est)=c("vare","scale","pi")
@@ -233,46 +243,149 @@ aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 		names(hyper_est)=c("vare","scale")
 	}
 	
-	if(op$model=="BayesA"){
-	  meanvarg=(SNPeff^2+def*scalea)/(def+1)
-	  Dinv=as.numeric(1/meanvarg*(1-2*SNPeff^2/(def+1)/meanvarg))
-	}
+	if(GWA!="No"){
+		cat("Start calculate GWA results\n")
+		
+		if(op$model=="BayesA"){
+		  meanvarg=(SNPeff^2+def*scalea)/(def+1)
+		  Dinv=as.numeric(1/meanvarg*(1-2*SNPeff^2/(def+1)/meanvarg))
+		}
 	
-	if(op$model=="SSVS"){
-	  h1=dnorm(SNPeff,mean=0,sd=sqrt(scalea))
-	  h0=dnorm(SNPeff,mean=0,sd=sqrt(scalea/c))
-	  tau=as.numeric(pi_snp/((h0/h1)*(1-pi_snp)+pi_snp))
-	  Dinv=as.numeric((tau+c*(1-tau))/scalea-SNPeff^2*tau*(1-tau)*(1-c)^2/scalea^2)
+		if(op$model=="SSVS"){
+		  h1=dnorm(SNPeff,mean=0,sd=sqrt(scalea))
+		  h0=dnorm(SNPeff,mean=0,sd=sqrt(scalea/c))
+		  tau=as.numeric(pi_snp/((h0/h1)*(1-pi_snp)+pi_snp))
+		  Dinv=as.numeric((tau+c*(1-tau))/scalea-SNPeff^2*tau*(1-tau)*(1-c)^2/scalea^2)
 	  
-	}
-	if(op$model %in% c("rrBLUP","GBLUP")) Dinv=diag(length(Z[1,]))
-	if(F)	{
-	  D=1/Dinv
+		}
+		if(op$model %in% c("rrBLUP","GBLUP")) Dinv=rep(1,length(Z[1,]))
+		
+		D=1/Dinv
   
-	  ZD=set_ZD(Z,D)
-  	A=tcrossprod(ZD,Z)
-  	  Ainv=solve(A)
+		ZD=set_ZD(Z,D)
+	  	A=tcrossprod(ZD,Z)
+		Ainv=tryCatch({
+			solve(A)
+		}, error=function(e){
+			solve(A+diag(0.0001,nanim))
+		})
 
-  		ZZ_G=ZZa+Ainv*lambda
- 	   coeff=rbind( cbind(XX,XZa),
-               cbind(ZaX,ZZ_G))
+	  	if(op$model %in% c("rrBLUP","GBLUP")) ZZ_G=ZZa+Ainv*lambda else ZZ_G=ZZa+Ainv*vare
+				
+	 	coeff=rbind(cbind(XX,XZa),
+	              cbind(ZaX,ZZ_G))
 
-    C=solve(coeff)
+	    C=solve(coeff)
   
-    Caa=C[(dimX+1):(dimX+nanim),(dimX+1):(dimX+nanim)]*vare
+	    Caa=C[(dimX+1):(dimX+nanim),(dimX+1):(dimX+nanim)]*vare
   
-    AiVAi=Ainv%*%Caa%*%Ainv
+	  	if(op$model %in% c("rrBLUP","GBLUP")) varahat=A*as.numeric(scalea)-Caa else varahat=A-Caa
+		
+		AiVAi=Ainv%*%varahat%*%Ainv
 
-    AiVAiZD=AiVAi%*%ZD
-  
-    p2=rep(0,nSNP)
-      for(i in 1:nSNP) p2[i]=sum(ZD[,i]*AiVAiZD[,i])
-	}
-  dCgg=rep(0,nSNP) #compute the diagnonal only
-
-	save(SNPeff,iter,tscale,tvare,tpi,thetakeep_a,dCgg,theta,file = paste(op$save.at,op$seed,".RData",sep=""))
+		AiVAiZD=AiVAi%*%ZD
+		
+		varg=rep(0,nSNP)
+		
+		for(i in 1:nSNP) varg[i]=sum(ZD[,i]*AiVAiZD[,i])
+			
+		if(op$model %in% c("rrBLUP","GBLUP")){
+			zscore=SNPeff/sqrt(abs(varg))
+			pvalue=2*pnorm(-abs(zscore))	
+			Cgg=scalea-varg	
+		}else{
+			Cgg=D-varg
+			zscore=SNPeff/sqrt(abs(Cgg))
+			pvalue=2*pnorm(-abs(zscore)) 
+		}
+		
+		if(GWA=="Win"){
+			
+			calc.win.r<-function(win){
+				Cha=rep(0,length(win))
 	
-   BAout<-list(betahat=betahat,ghat=SNPeff, yhat=yhat,y=y0,train=vtrain,hyper_est=hyper_est,Cgg=dCgg,pi_snp=pi_snp,phi_est=phi_est,idx=idx,iter=iter,sdbeta=sdbeta,model=op$model,df=def)
+				current=1
+
+				for(i in 1:length(win))
+				{
+					gw=SNPeff[current:(current+win[i]-1)]
+					if(win[i]>1){
+						t1=Z[,current:(current+win[i]-1)]
+						t2=AiVAiZD[,current:(current+win[i]-1)]
+						Cw=-crossprod(t1,t2) #mat_mut(t1,t2) #
+						diag(Cw)=Cgg[current:(current+win[i]-1)]
+		
+						CwInv=tryCatch({
+								solve(Cw)
+							}, error=function(e){
+								solve(Cw+diag(diag(Cw)*0.00000001))
+						})
+						Cha[i]=gw%*%CwInv%*%gw
+					}else{
+						Cha[i]=gw*gw/Cgg[current]
+					}
+					current=current+win[i]
+				}
+				Cha
+			}
+
+			calc.win.f<-function(win){
+	
+				Chf_RR=rep(0,length(win))
+				current=1
+
+				for(i in 1:length(win))
+				{
+					gw=SNPeff[current:(current+win[i]-1)]
+					if(win[i]>1){
+						t1=Z[,current:(current+win[i]-1)]
+						t2=AiVAiZD[,current:(current+win[i]-1)]
+						Cw=crossprod(t1,t2) #mat_mut(t1,t2) #
+
+
+						diag(Cw)=varg[current:(current+win[i]-1)]
+						CwInv=tryCatch({
+								solve(Cw)
+							}, error=function(e){
+								solve(Cw+diag(diag(Cw)*0.00000001))
+						})
+						Chf_RR[i]=gw%*%CwInv%*%gw
+
+					}else{
+						Chf_RR[i]=gw*gw/varg[current]
+			
+					}
+					current=current+win[i]
+				}
+				Chf_RR
+			}
+			
+			if(op$model %in% c("rrBLUP","GBLUP")){
+				wCh=calc.win.f(win)
+				Wpvalue=pchisq(abs(wCh), win, lower.tail = FALSE)
+			}else{
+				wCh=calc.win.r(win)
+				Wpvalue=pchisq(abs(wCh), win, lower.tail = FALSE)
+			}
+		}else{
+			wCh=NULL
+			Wpvalue=NULL
+		}
+		
+	}else{
+		zscore=NULL
+		pvalue=NULL
+		Cgg=NULL
+		varg=NULL
+		wCh=NULL
+		Wpvalue=NULL
+	}
+	save(SNPeff,iter,tscale,tvare,tpi,thetakeep_a,varg,Cgg,theta,file = paste(op$save.at,op$seed,".RData",sep=""))
+	
+   BAout<-list(betahat=betahat,ghat=SNPeff, yhat=yhat,y=y0,train=vtrain,
+	   hyper_est=hyper_est,Cgg=Cgg,varg=varg,pi_snp=pi_snp,phi_est=phi_est,
+	   idx=idx,iter=iter,sdbeta=sdbeta,model=op$model,df=def,GWA=GWA,win=win,pvalue=pvalue,
+	   zscore=zscore,Wpvalue=Wpvalue,wCh=wCh,map=map,Wchr=chr)
   
   	class(BAout)="ba"
   	return(BAout)	

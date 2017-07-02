@@ -5,9 +5,9 @@
 \title{Set initial values for hyperparameters}
 \usage{
 set_init(y, data, geno, genoid, df = 5, scale = NULL, vare = NULL,
-  g = NULL, beta = NULL, pi_snp = 0.05, h2 = 0.5, c = 1000,
-  model = c("rrBLUP", "GBLUP", "BayesA", "BayesB", "SSVS"), centered = T,
-  from = NULL)
+  g = NULL, beta = NULL, pi_snp = 0.05, post_prob = NULL, h2 = 0.5,
+  c = 1000, model = c("rrBLUP", "GBLUP", "BayesA", "BayesB", "SSVS"),
+  centered = T, from = NULL)
 }
 \arguments{
 \item{y}{character phenotypes name}

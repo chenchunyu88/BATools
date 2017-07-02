@@ -12,12 +12,12 @@ update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
 op<-create.options(model="rrBLUP",method="MCMC",priors=NULL,init=init,
                    update_para=update_para,run_para=run_para,save.at="rrBLUP",print_mcmc=print_mcmc)
 
-rrBLUP<-baTest(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op)
+rrBLUP<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op)
 
 #### Cross-validation using BATools
 set.seed(1234)
 PigPheno=createCV(data = PigPheno,k=5,"driploss")
-cvrrBLUP<-baTest(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1)
+cvrrBLUP<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1)
 plot(cvrrBLUP)
 cvrrBLUP
 

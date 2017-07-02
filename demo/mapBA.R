@@ -18,12 +18,15 @@ update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
 op<-create.options(model="BayesA",method="MAP",priors=NULL,init=init,
                    update_para=update_para,run_para=run_para,save.at="mapBayesA",print_mcmc=NULL,D="P")
 
-mapBA<-baTest(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op)
+mapBA<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op,map = PigMap,GWA="Win")
 mapBA
+par(mfrow=c(1,2))
+man_plot_pvalue(mapBA)
+man_plot_pvalue(mapBA,type="Win")
 #### Cross-validation using BATools
 set.seed(1234)
 PigPheno=createCV(data = PigPheno,k=5,"driploss")
-cvmapBA<-baTest(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1)
+cvmapBA<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1)
 cvmapBA
 plot(cvmapBA)
 

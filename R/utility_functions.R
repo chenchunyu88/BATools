@@ -85,7 +85,7 @@ set_init <- function(y,data,geno,genoid,df=5,scale=NULL,vare=NULL,g=NULL,beta=NU
 	if(!(model%in%c("BayesB","SSVS"))) pi_snp=1
 		
 	init<-list(vare=vare,df=df,scale=scale,g=g,beta=beta,pi=pi_snp)
-	if(model=="SSVS") init<-list(vare=vare,df=df,scale=scale,g=g,beta=beta,pi=pi_snp,post_prob,c=c)
+	if(model=="SSVS") init<-list(vare=vare,df=df,scale=scale,g=g,beta=beta,pi=pi_snp,post_prob=post_prob,c=c)
 	init
 }
 
@@ -142,3 +142,44 @@ createCV<-function(data,k=5,y){
   cbind(data,newdata)
 }
 
+#' @export
+man_plot_prob<-function(ba,type=c("SNP","Win"), col = c("black", "red"),...){
+  type<-match.arg(type)
+  if(ba$GWA!="Win" && type=="Win") stop("Window based GWA is require to create plot for window based approach, redo analysis with GWA=Win")
+  if(type=="SNP"){
+    p<-ba$prob
+    Chromsome_id=ba$map$chr
+  }
+  if(type=="Win"){
+    p=ba$Wprob
+    Chromsome_id=ba$Wchr
+  }
+  plot(p, pch = 20, col = col[(Chromsome_id%%2) + 1], ylab = "Posterior probability", xlab = "Chromsome",  axes = F,...)
+  axis(2)
+  lns <- (by(Chromsome_id,Chromsome_id , length))
+  axis(1, at = c(0, cumsum(lns)[-length(lns)]) + as.vector(lns/2), labels = names(lns))
+  box()
+  #abline(h = 0.9, lwd = 2, col = "green")
+}
+
+
+#' @export
+man_plot_pvalue<-function(ba,type=c("SNP","Win"), col = c("black", "red"),ylim=c(0,12),...){
+  type<-match.arg(type)
+  if(ba$GWA!="Win" && type=="Win") stop("Window based GWA is require to create plot for window based approach, redo analysis with GWA=Win")
+  if(type=="SNP"){
+    p<-ba$pvalue
+    Chromsome_id=ba$map$chr
+  }
+  if(type=="Win"){
+    p=ba$Wpvalue
+    Chromsome_id=ba$Wchr
+  }
+  plot(-log(p,10), pch = 20, col = col[(Chromsome_id%%2) + 1], ylab = "-log10-pvalue", xlab = "Chromsome",  axes = F,ylim = ylim,...)
+  axis(2)
+  lns <- (by(Chromsome_id,Chromsome_id , length))
+  axis(1, at = c(0, cumsum(lns)[-length(lns)]) + as.vector(lns/2), labels = names(lns))
+  box()
+  threshold=ifelse(ba$model %in%c("GBLUP","rrBLUP") ,0.05/length(p),0.05)
+  abline(h = -log(threshold, 10), lwd = 2, col = "green")
+}

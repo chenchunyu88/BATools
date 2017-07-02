@@ -1,252 +1,231 @@
-#' bafit function can fit various Bayesian models including rrBLUP, BayesA/B/C, antedependence models and etc. Input data can be either a `baData` object or specify the fixed and random effects seperately.
+#' baFit function can fit various Bayesian models including rrBLUP, BayesA/B/C, antedependence models and etc. Input data can be either a `baData` object or specify the fixed and random effects seperately.
 #' @title Fitting various Bayesian models
 #' @param dataobj A list of baData including phenotypes, genotypes and etc.
 #' @param op A list of options to run Bayesian models
 #' @param y A numeric vector of phenotypes
 #' @param A matrix of genotypes
 #' @param trait A string indicating the trait for analysis
-#' @return The result of the analysis as a ba object, a list of estimate of fixed and random effects as well as variance components.
-#' @examples
+#' @return The result of the analysis as a `ba` object, a list of estimate of fixed and random effects as well as variance components.
+#' @examples \dontrun{
 #' ###########Loading and preparing data##########
+#' #This code demonstrate SSVS model
+#' rm(list=ls())
 #' library(BATools)
-#' data("MSUPRP_sample")
-#' summary(MSUPRP_sample)
-#' pheno<-data.frame(MSUPRP_sample$pheno[,,]) 
-#' geno<-MSUPRP_sample$geno[,1:500]
-#' ped<-MSUPRP_sample$pedigree
-#' map=MSUPRP_sample$map
-#' sex<-ped$sex
-#' sex<-as.factor(sex)
-#' x<-model.matrix( ~ sex -1,contrasts.arg=list(sex=contrasts(sex, contrasts=F)))
-#' colnames(x)<-c("female","male")
-#' rownames(x)<-ped$ID
-#' pig=create.baData(pheno=pheno,geno=geno,map=map,pedigree=ped,fixed=x,makeAinv=F)
-#' ######################BayesA####################
-#' ##############Setting up options################
-#' init=list(df=5,scale=0.01,pi=1)
-#' run_para=list(niter=2000,burnIn=1000,skip=10)
-#' print_mcmc=list(piter=200)
-#' update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
-#' op<-create.options(model="BayesA",method="MCMC",ante=FALSE,priors=NULL,init=init,
-#'                    update_para=update_para,run_para=run_para,save.at="BayesA",cv=NULL,print_mcmc=print_mcmc)
-#' #################run BayesA MCMC################
-#' ba<-bafit(dataobj=pig,op=op,trait="driploss")
-#' ba
-#'  @export
-#'  @useDynLib BATools
-bafit <- function(dataobj=NULL,op=NULL,y=NULL,Z=NULL,X=NULL,trait=NULL){
-	if(is.null(dataobj)) 
-	{
-		if(is.null(y) || is.null(Z)) stop("must have baData or y and Z to start the function")
-		if(!is.null(Z) && class(Z)!="matrix") {
-			warning("Z is not a matrix, converting it to a matrix, this may cause issue in the estimates")
-			Z=as.matrix(Z)
-		}
-		if(!is.null(X) && class(X)!="matrix") {
-			warning("Z is not a matrix, converting it to a matrix, this may cause issue in the estimates")
-			X=as.matrix(X)
-		}
-	}else{
-	 	if(class(dataobj)!="baData") stop("dataobj must be baData")
-	}
-	
-	if(is.null(op)) cat("no options inputed, use the default options.\n")
-	
-	if(op$ante)
-	{
-		if(is.null(dataobj$map))
-		{
-			cat("no map is provided for antedepedence model, program will assume the markers are in the same chromosome.\n")
-			ante_p=NULL
-		}
-		else{
-			if(max(dataobj$map$chr)>1)
-			{
-				map=dataobj$map[which(rownames(dataobj$map)%in%colnames(dataobj$geno)),]
-				ante_p=rep(0,max(map$chr))
-				ante_p[1]=sum(map$chr==1)
-				for(i in 2:length(ante_p))
-				{
-				 	ante_p[i]=sum(dataobj$map$chr==i)+ante_p[i-1]
-				}
-				#print(ante_p)
-			}else{
-				ante_p=NULL
-			}
-
-		}
-		
-	}
-	
-	if(op$model=="BayesA")
-	{
-		if(op$method=="MCMC")
-		{
-			if(op$ante) {cat("Model underdevelopment\n")}#res<-anteBayesAm(dataobj,op,ante_p,y,Z,trait)
-			else res<-BayesM(dataobj,op,y,Z,X,trait=trait)
-		}else{
-			if(op$ante) {cat("Model underdevelopment\n")}#res<-anteBayesAe(dataobj,op,ante_p,y,Z,trait)
-			else res<-BayesE(dataobj,op,y,Z,X,trait=trait)	
-		}
-		
-	}
-	
-	if(op$model=="BayesB"){
-		if(op$method=="MCMC")
-		{
-			if(op$ante) {cat("Model underdevelopment\n")}#res<-anteBayesBm(dataobj,op,ante_p,y,Z,trait)
-			else res<-BayesM(dataobj,op,y,Z,X,trait=trait)
-		}else{
-			if(op$ante) {cat("Model underdevelopment\n")}#res<-anteBayesBe(dataobj,op,ante_p,y,Z,trait)
-			else {cat("Model underdevelopment\n")} #res<-BayesBe(dataobj,op,y,Z,X,trait)	
-		}
-	}
-	
-	if(op$model=="rrBLUP"){
-		if(op$method=="MCMC")
-		{
-			res<-BayesM(dataobj,op,y,Z,X=X,trait=trait)
-		}else{
-			res<-BayesE(dataobj,op,y,Z,X=X,trait=trait)	
-			
-		}
-	}
-	
-	if(op$model=="SSVS")
-		{
-			if(op$method=="MCMC")
-			{
-				if(op$ante) {cat("Model underdevelopment\n")}#res<-anteBayesAm(dataobj,op,ante_p,y,Z,X,trait)
-				else res<-BayesM(dataobj,op,y,Z,X,trait=trait)
-			}else{
-				if(op$ante) {cat("Model underdevelopment\n")}#res<-anteBayesAe(dataobj,op,ante_p,y,Z,X,trait)
-				else res<-BayesE(dataobj,op,y,Z,X,trait=trait)	
-			}
-
-		}
-	
-	if(op$model=="IWBayesA")
-	{
-		if(op$method=="MCMC")
-		{
-			{cat("Model underdevelopment\n")}#res<-IWBayesAm(dataobj,op,y,Z,X,trait)
-		}else{
-			
-			#res<-BayesAe(dataobj,op,trait)	
-		}
-		
-	}
-	
-	return(res)
-}
-
-
-
-
-
-BATools <- function(y=NULL,Z=NULL,X=NULL,Ainv=NULL,W=NULL,model=NULL,param=NULL,nIter=2000,
-      burnIn=1000,skip=10,seed=1,saveAt=NULL,R2=0.5,verbose=NULL,ncore=1,fixed=list(df0=T,s0=F,pi=T)){
-  if(is.null(y)) stop("must have phenotype y to start the function")
-  if(is.null(Z)) stop("must have genotype Z to start the function")
-  if(any(is.na(Z)))
-  { 
-    stop("Z cannot have NA values")
+#' data("Pig")
+#' #Standardize genotype matrix
+#' geno=std_geno(PigM,method="s",freq=PigAlleleFreq)
+#' init=set_init("driploss",data=PigPheno,geno=geno,"id",df=5,pi_snp=0.001,h2=0.5,c=1000,model="SSVS",centered=TRUE)
+#' #or set your own starting values using 
+#' #init=list(df=5,scale=0.01,pi=1) 
+#' run_para=list(niter=20000,burnIn=10000,skip=10)
+#' print_mcmc=list(piter=1000)
+#' update_para=list(df=FALSE,scale=TRUE,pi=F)
+#' op<-create.options(model="SSVS",method="MCMC",priors=NULL,init=init,
+#'                    update_para=update_para,run_para=run_para,save.at="SSVS",print_mcmc=print_mcmc)
+#' 
+#' SSVS<-baTest(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op)
+#' SSVS
+#' #### Cross-validation using BATools
+#' set.seed(1234)
+#' PigPheno=createCV(data = PigPheno,k=5,"driploss")
+#' cvSSVS<-baTest(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1)
+#' plot(cvSSVS)
+#' cvSSVS
+#' 
+#' #For GBLUP/rrBLUP:
+#' demo(GBLUP)
+#' demo(RR)
+#' 
+#' #For BayesA:
+#' demo(BA)
+#' demo(mapBA)
+#' 
+#' #For SSVS:
+#' demo(SSVS)
+#' demo(mapSSVS)
+#' 
+#' #For BayesB:
+#' demo(BB)
+#' 
+#' }
+#' @export
+#' @useDynLib BATools
+baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
+                 PedA=NULL,options=NULL,train=NULL,GWA=c("No","SNP","Win")){
+  GWA<-match.arg(GWA)
+  if(GWA!="No") {
+    if(is.null(map)) stop("provide map for GWA")
+    else{
+      if(sum(colnames(map)%in%c("chr","pos","idw"))<3) stop("map should be a data.frame with colnames of chr, pos and idw")
+    }
   }
+  id<-model.frame(genoid,data=data,na.action = na.pass)
+  id <- eval(id, parent.frame())
+  id <-as.character(t(id))
+  if(length(id)!=length(unique(id))) stop("BATools does not support repeated measures yet, please keep one record per individual or contact us")
   
-  if(!is.null(Z) && class(Z)!="matrix") {
-    warning("Z is not a matrix, converting it to a matrix, this may cause issues")
-    Z=as.matrix(Z)
-  }
+  if(is.null(options)) cat("no options inputed, use the default options.\n")
   
-  nR=1
-  #see if X needs to be processed here 
-  if(is.null(X)){
-    X = matrix(1,length(y),1)
-    rownames(X)=names(y)
+  if(substr(options$model,1,2)=="ss" | substr(options$model,5,6)=="ss"){
+    if(is.null(PedA)) stop("Pedigree based additive relationship matrix is required for single-step approach")
+    
   }else{
-    if(class(X)=="matrix"){
-       if(dim(X)[2]>1) nR=nR+1
-    }else stop("Fixed effect X must be a matrix")
+    M<-geno[id,]
+    if(nrow(M)<length(id)){
+      warning("The number of phenotyped individuals are larger than genotyped, 
+              only genotyped individual will be used. Please consider to use single-step approach")
+      data<- data %>% filter (id %in% rownames(M))
+    }   
   }
   
-  #see if A needs to be processed here 
-  if(!is.null(Ainv)){
-    if(any(is.na(Ainv)))
-    { 
-      stop("Ainv cannot have NA values")
+  mf <- model.frame(formula, data = data, na.action = na.pass)
+  mf <- eval(mf, parent.frame())
+  y <- model.response(mf)
+  names(y)=id
+  X <- model.matrix(formula,data=data)
+  rownames(X)=id
+  if (!is.null(randomFormula)) {
+    reff <- model.frame(randomFormula, data = data, na.action = na.pass)
+    reff <- eval(reff, parent.frame())
+    Z<-list()
+    if (ncol(reff) == 1) {
+      Z[[1]]=model.matrix(as.formula(paste0("y~0+",colnames(reff)[1])),data=data)
+    }else {
+      for(i in 1:ncol(reff)){
+        Z[[i]]=model.matrix(as.formula(paste0("y~0+",colnames(reff)[i])),data=data)
+      }
     }
-    
-   
-    if(class(Ainv)=="matrix") {
-      nR=nR+1
-    }else stop("Ainv must be a matrix")
+  }else {
+    Z=NULL
+  }
+  if(!is.null(train)){
+    vtrain=model.frame(train, data = data, na.action = na.pass)
+    vtrain <-as.vector(t(vtrain))
+  }else vtrain=NULL
+  
+  if(options$model=="rrBLUP"){
+    if(options$method=="MCMC") res<-BayesM(op,y,M,X,vtrain,GWA,map)
+    if(options$method %in% c("REML","MAP")) {
+      if(dim(M)[1]> dim(M)[2]) stop("nObservation>nSNP is not available for GBLUP")#res<-BayesE(op,y,M,X,vtrain,GWA,map) 
+      else res<-aBayesE(op,y,M,X,vtrain,GWA,map)
+    } 
   }
   
-  #see if W needs to be processed here 
-  if(!is.null(W)){
-    if(any(is.na(W)))
-    { 
-      stop("W cannot have NA values")
-    }
-    if(class(W)=="matrix") {
-      nR=nR+1
-    }else stop("W must be a matrix")
-  }
-    
-    
-  if(is.null(model) && !is.null(Z)) {
-    cat("model is NULL for marker effects, use the default options to fit a RR model.\n")
-    model=list(type="RR")
-  } 
-  
-  if(!is.null(model) && !is.null(Z)){
-    model_names=c("RR","BayesA","BayesB","SSVS","anteBayesA","anteBayesB","ssBayesA","ssBayesB","ssSSVS","IWBayesA","CDBayesA")
-    if(!(model %in% model_names))
-    {
-      tmp<-paste(model_names, collapse=", ")
-      stop("model must be ",tmp)
-    }
-    param=create.param(model,param,y,Z,Ainv=Ainv,W=W,R2=R2,nR=nR)
+  if(options$model=="GBLUP"){
+    res<-aBayesE(op,y,M,X,vtrain,GWA,map)
   }
   
+  if(options$model=="BayesA"){
+    if(options$method=="MCMC") res<-BayesM(op,y,M,X,vtrain,GWA,map)
+    if(options$method =="MAP") {
+      if(dim(M)[1]> dim(M)[2]) stop("nObservation>nSNP is not available for MAP")#res<-BayesE(op,y,M,X,vtrain,GWA,map) 
+      else res<-aBayesE(op,y,M,X,vtrain,GWA,map)
+    } 
+  }
   
-  #default for saveAt
-  if(is.null(saveAt)) saveAt=""
+  if(options$model=="BayesB"){
+    if(options$method=="MCMC") res<-BayesM(op,y,M,X,vtrain,GWA,map)
+    if(options$method=="MAP") stop("BayesB MAP approach is not available yet")
+  }
   
-  #default for verbose
-  if(is.null(verbose)) verbose=list(v=T,iter=100,to="screen")
-  else{
-    verbose_names=c("v","iter","to")
-    if(!(prod(names(verbose) %in% verbose_names)))
-    {
-      tmp<-paste(verbose_names, collapse=", ")
-      stop("Verbos parameter names must be ",tmp)
-    }
-    if(is.null(verbose$iter)) verbose$iter=100
-    if(is.null(verbose$v)) verbose$v=T
-    if(is.null(verbose$to)) verbose$to="screen"
-    if(!is.numeric(verbose$iter)) stop("iter in verbose must be numeric")
-    if(!is.logical(verbose$v)) stop("v in verbose must be logical")
-    print_tos=c("screen","disk")
-    if(!(prod(verbose$to %in% print_tos))) stop("to in verbose must be screen or disk")	
+  if(options$model=="SSVS"){
+    if(options$method=="MCMC") res<-BayesM(op,y,M,X,vtrain,GWA,map)
+    if(options$method=="MAP") {
+      if(dim(M)[1]> dim(M)[2]) stop("nObservation>nSNP is not available for MAP")#res<-BayesE(op,y,M,X,vtrain,GWA,map) 
+      else res<-aBayesE(op,y,M,X,vtrain,GWA,map)
+    } 
+  }
+  
+  if(options$model=="ssBayesA"){
     
   }
   
-  if(model %in% c("RR","BayesA","BayesB","SSVS")) {
-    BayesM2(y=y,Z=y,X=y,Ainv=Ainv,W=W,model=model,param=param,nIter=nIter,
-           burnIn=burnIn,skip=skip,seed=seed,saveAt=saveAt,R2=R2,
-           verbose=verbose,ncore=ncore,fixed)
+  if(options$model=="ssBayesB"){
+    
+  }
+  
+  if(options$model=="ssSSVS"){
+    
+  }
+  
+  if(options$model=="anteBayesA"){
+    
+  }
+  
+  if(options$model=="anteBayesB"){
+    
+  }
+  
+  if(options$model=="anteSSVS"){
+    
+  }
+  
+  if(options$model=="antessBayesA"){
+    
+  }
+  
+  if(options$model=="antessBayesB"){
+    
+  }
+  
+  if(options$model=="antessSSVS"){
+    
+  }
+  if(op$model=="IWBayesA"){
+    
+  }  
+  res
+  #list(y=y,X=X,M=M,Z=Z,id=id)
   }
 
+#res<-baTest(driploss~sex,data=PigPheno)#,geno = PigM,~id,~litter+slgdt_cd,options=list(model="BayesA"))
+#' @export
+getMatrix<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,PedA=NULL,options=NULL,train=NULL){
+  id<-model.frame(genoid,data=data,na.action = na.pass)
+  id <- eval(id, parent.frame())
+  id <-as.character(t(id))
+  if(length(id)!=length(unique(id))) stop("BATools does not support repeated measures yet, please keep one record per individual or contact us")
   
-  return(res)
-}
-
-
-AIREML<-function(y=NULL,Z=NULL,X=NULL,A=NULL,W=NULL,model=NULL,
-                 maxIter=50,saveAt=NULL,R2=0.5){
- model=c("GBLUP","EMBayesA","EMSSVS")
-}
+  if(is.null(options)) cat("no options inputed, use the default options.\n")
+  
+  if(substr(options$model,1,2)=="ss" | substr(options$model,5,6)=="ss"){
+    if(is.null(PedA)) stop("Pedigree based additive relationship matrix is required for single-step approach")
+    
+  }else{
+    M<-geno[id,]
+    if(nrow(M)<length(id)){
+      warning("The number of phenotyped individuals are larger than genotyped, 
+              only genotyped individual will be used. Please consider to use single-step approach")
+      data<- data %>% filter (id %in% rownames(M))
+    }   
+  }
+  
+  mf <- model.frame(formula, data = data, na.action = na.pass)
+  mf <- eval(mf, parent.frame())
+  y <- model.response(mf)
+  names(y)=id
+  X <- model.matrix(formula,data=data)
+  rownames(X)=id
+  if (!is.null(randomFormula)) {
+    reff <- model.frame(randomFormula, data = data, na.action = na.pass)
+    reff <- eval(reff, parent.frame())
+    Z<-list()
+    if (ncol(reff) == 1) {
+      Z[[1]]=model.matrix(as.formula(paste0("y~0+",colnames(reff)[1])),data=data)
+    }else {
+      for(i in 1:ncol(reff)){
+        Z[[i]]=model.matrix(as.formula(paste0("y~0+",colnames(reff)[i])),data=data)
+      }
+    }
+  }else {
+    Z=NULL
+  }
+  if(!is.null(train)){
+    vtrain=model.frame(train, data = data, na.action = na.pass)
+    vtrain <-as.vector(t(vtrain))
+  }else vtrain=NULL
+  list(y=y,X=X,M=M,Z=Z,id=id,vtrain=vtrain)
+  }
 
 
 ##################################################################################################

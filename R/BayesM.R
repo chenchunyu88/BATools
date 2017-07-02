@@ -29,7 +29,7 @@ calc.phiw<-function(win,phi){
 
 
 #Main function for Bayesian whole genome regression when all individuals are genotyped
-BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL) 
+BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL) 
 {   # START OF FUNCTION
 	pi_math = 3.14159265359	
 	set.seed(op$seed)  
@@ -44,7 +44,16 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 		X=X[-whichNa,]
 	}
 
-	
+	if(GWA=="Win") {
+	  win=c()
+	  for(j in 1:max(map$idw)){
+	    win=append(win,sum(map$idw==j))
+	  }
+	  chr=map %>% distinct(chr,idw) %>% select(chr) %>% t %>% as.numeric
+	}else{
+	  win=NULL
+	  chr=NULL
+	}
 	# Vectors for saved samples of hyperparameters
 	if (op$update_para$df)    {defsave   =  array(0,op$run_para$niter/op$run_para$skip) }
 	 {scalesave =  array(0,op$run_para$niter/op$run_para$skip) }
@@ -98,10 +107,8 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 	theta      = array(0,dimW)
 	SNPeff     = array(0,nSNP)
 	if(op$model=="SSVS"){
-	    phi=array(0,nSNP)
 	    hratio=array(0,nSNP)
 	    loghratio=array(0,nSNP)
-	    phisave=array(0,nSNP)
 	    hratiosave=c()
 		  c=op$init$c
 	}
@@ -109,7 +116,14 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 	SNPvar     = array(0,nSNP)       # used to take running sum of SNP specific variances
 	SNPvarlast = array(0,nSNP)
 	postprob   = array(0,nSNP)       # indicator variable for inclusion of SNP in model
-	                               # later used to determine posterior probability...unique to BayesB
+                                    # later used to determine posterior probability...unique to BayesB and SSVS
+	postprob_save=array(0,nSNP)
+	if(GWA=="Win" && op$model=="BayesB")
+	{
+	  p1=array(0,nSNP)
+	  p2=array(0,nSNP)
+	  pw=array(0,nSNP)
+	}
 	alphametrovar = array(0,nSNP)    # used to monitor MH acceptance rates for included genes.  
 
 	# This is for computing mean and variance of each SNP effect.
@@ -190,8 +204,10 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 				theta=BayesB[[1]]
 				ycorr=BayesB[[2]]
 				SNPeff=theta[-(1:dimX)]
+				p1=BayesB[[3]]
 				postprob=BayesB[[3]]
-				if(itersave<=0) postprob   = array(0,nSNP)  
+			  postprob_save=postprob_save+postprob 
+				postprob   = array(0,nSNP) 
 				alphametrovar=BayesB[[4]]
 				G1=BayesB[[5]][1] #add G1
 				alpha1=BayesB[[6]][1]
@@ -201,15 +217,15 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 				#####################################################################################
 				# sample effect and variance for each SNP (Bayes C)	
 				#####################################################################################
-		        BayesC<- .Call("BayesCC",nSNP,dimX,nanim,Wstacked,WWdiag, theta, ycorr,rep(scalea,nSNP),vare,Pi_SNP,phi,hratio,c)
+		        BayesC<- .Call("BayesCC",nSNP,dimX,nanim,Wstacked,WWdiag, theta, ycorr,rep(scalea,nSNP),vare,Pi_SNP,postprob,hratio,c)
 		        theta=BayesC[[1]]
 		        ycorr=BayesC[[2]]
 		        SNPeff=theta[-(1:dimX)]
-		        phi=BayesC[[3]]
-		        if(itersave>0) phisave=phisave+phi
+		        postprob=BayesC[[3]]
+		        if(itersave>0) postprob_save=postprob_save+postprob
 			}
 	 		 	
-		} # "END" OF BAYESB
+		} # "END" OF BAYESB/SSVS
 
 		if (itersave>1) 
 		{     # "START" OF COMPUTE POSTERIOR MEANS & VARIANCES
@@ -220,10 +236,36 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 
 			SNPvar=SNPvarlast + (varq-SNPvarlast)/itersave
 			SNPvarlast=SNPvar
-
+			if (iter%%op$run_para$skip == 0) {
+			  if(op$model %in% c("rrBLUP","BayesA")){
+			    count=count+(SNPeff>0)
+			    if(GWA=="Win"){
+			      g_total<-Z%*%SNPeff
+			      var_total=sum(g_total*g_total)/nanim-(sum(g_total)/nanim)^2
+			      varw=calc.varw(win,Z,SNPeff)
+			      qw=varw/var_total
+			      countqw=countqw+(qw>0.01)
+			    }
+			  }
+			 if(op$model %in% c("SSVS","BayesB") && GWA=="Win"){
+			   if(op$model=="SSVS") Wpostprob=Wpostprob+calc.phiw(win,postprob) else Wpostprob=Wpostprob+calc.phiw(win,p1)
+			   n_saved_sample=n_saved_sample+1
+			   #cat("\n p2",p2,"\n Wpb",Wpostprob,"\n")
+			  } 
+			} 
 		}  # "END" OF COMPUTE POSTERIOR MEANS & VARIANCES
 		if (itersave==1) {
 			Mlast = theta;SNPvarlast=varq;
+		
+			  if(op$model %in% c("rrBLUP","BayesA")){
+			    count=rep(0,nSNP)
+			    if(GWA=="Win") countqw=rep(0,length(win))
+			  }
+			  if(op$model %in% c("SSVS","BayesB") && GWA=="Win"){
+			    Wpostprob=rep(0,length(win))
+			    n_saved_sample=0
+			  } 
+			
 		} 
 
 		#####################################################################################	
@@ -268,7 +310,7 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 	        if (op$update_para$scale) 
 	         {  #"START" OF SAMPLE THE SCALE PARAMETER 
 	              #shape_g = 0.5*(nSNP+5)
-	   	   	   	  tmp=SNPeff*SNPeff/((1-phi)/c+phi)
+	   	   	   	  tmp=SNPeff*SNPeff/((1-postprob)/c+postprob)
 	              #scale_g = 0.5*(sum(tmp)+0.04)
 	              scalea =  (sum(tmp))/rchisq(1,nSNP)
 	   	    	  #rgamma(1,shape=shape_g,scale=scale_g)
@@ -328,7 +370,7 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 		{ 
 			if(op$model=="BayesB") 	Pi_SNP = rbeta(1,op$priors$alphapi+G1,op$priors$betapi+nSNP-G1) 
 			if(op$model=="SSVS") {
-		 	   m1=sum(phi)
+		 	   m1=sum(postprob)
 		       Pi_SNP=rbeta(1,op$priors$alphapi+m1,op$priors$betapi+nSNP-m1)
 			}	
 		} #"END" OF SAMPLE THE PI PARAMETER 
@@ -353,8 +395,17 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 		
 		if((op$print_mcmc$piter!=0) & iter%%op$print_mcmc$piter==0)
 		{
-			tmp=paste("iter= ",iter," vare= ",round(vare,6), "scale= ", round(scalea,8),"\ntimepercycle= ", round(timeSNP/iter,3), "estimated time left=", round(timeSNP/iter*(op$run_para$niter-iter),2),"seconds \n",sep=" ")
-			if(op$print_mcmc$print_to=="screen")
+		  if(op$model %in% c("rrBLUP","BayesA")){
+		    tmp=paste("iter= ",iter," vare= ",round(vare,6), "scale= ", round(scalea,8),
+		              "\ntimepercycle= ", round(timeSNP/iter,3), "estimated time left=", 
+		              round(timeSNP/iter*(op$run_para$niter-iter),2),"seconds \n",sep=" ")
+		  }
+		  if(op$model %in% c("SSVS","BayesB")){
+		    tmp=paste("iter= ",iter," vare= ",round(vare,6), "scale= ", round(scalea,6),"pi= ",round(Pi_SNP,6),
+		              "\ntimepercycle= ", round(timeSNP/iter,3), "estimated time left=", 
+		              round(timeSNP/iter*(op$run_para$niter-iter),2),"seconds \n",sep=" ")
+		  } 
+		 	if(op$print_mcmc$print_to=="screen")
 			{
 				cat(tmp)
 			}else{
@@ -363,7 +414,7 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 		}
 		
     if (iter%%1000==0) 
-       {
+    {
 			#############################################################################################
 			#    PROCESSING MCMC SAMPLES
 			#############################################################################################
@@ -379,34 +430,41 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 			timepercycle=timetotal/iter
 			save(iter,timepercycle,SNPtimepercycle,file=paste(op$save.at, "time",op$seed,".RData",sep=""))
 
-       	}# "END" OF PROCESSING MCMC SAMPLING
+    }# "END" OF PROCESSING MCMC SAMPLING
                
 		if (iter%%1000==0 & itersave>1 ) 
 		{
 		#############################################################################################
 		#    PROCESSING MCMC SAMPLES
 		#############################################################################################
-			meanmu=Mcurrent[1:dimX]
+		  if(op$model %in% c("rrBLUP","BayesA")){
+		    tmp=count/(itersave/run_para$skip)
+		    bpvalue=2*apply(cbind(tmp,1-tmp),1,min)
+		    if(GWA=="Win") Wprob=countqw/(itersave/run_para$skip) else Wprob=NULL
+		  }
+		  if(op$model %in% c("SSVS","BayesB")){
+		    #if(op$model=="SSVS") postprob_est   = postprob_save/itersave else postprob_est=postprob/itersave
+		    postprob_est   = postprob_save/itersave
+		    if(GWA=="Win") Wpostprob_est =Wpostprob/n_saved_sample else Wpostprob_est=NULL
+		    names(postprob_est)=colnames(Z)
+		  } 
+		  meanmu=Mcurrent[1:dimX]
 			names(meanmu)=colnames(X)
 			meang= Mcurrent[(dimX+1):dimW]
 			names(meang)=colnames(Z)
 			varg = Qcurrent[(dimX+1):dimW]/itersave
 			names(varg)=colnames(Z)
-			postprob_save   = postprob/itersave
-			names(postprob_save)=colnames(Z)
- 	        save(iter,alphadef_save,alphascalea_save,file=paste(op$save.at, "alphadef",op$seed,".RData",sep=""))
+			
+ 	    save(iter,alphadef_save,alphascalea_save,file=paste(op$save.at, "alphadef",op$seed,".RData",sep=""))
  			
- 			if(op$model=="BayesB") save(iter,meanmu,meang,postprob_save,varg,SNPvar,file = paste(op$save.at,"EffectsResults",op$seed,".RData",sep=""))
- 				else save(iter,meanmu,meang,varg,SNPvar,file = paste(op$save.at,"EffectsResults",op$seed,".RData",sep=""))
+ 			if(op$model %in% c("BayesB","SSVS")) save(iter,meanmu,meang,postprob_est,varg,SNPvar,file = paste(op$save.at,"EffectsResults",op$seed,".RData",sep=""))
+ 				else save(iter,meanmu,meang,varg,SNPvar,bpvalue,Wprob,file = paste(op$save.at,"EffectsResults",op$seed,".RData",sep=""))
  			
 		} # "END" OF PROCESSING MCMC SAMPLING
 
   } # "END" OF MCMC SAMPLING
 
-	if(op$model=="SSVS"){
-	  phisave=phisave/itersave
-	  names(phisave)=colnames(Z)
-	}
+
 
 	names_hypers=c()
 	 names_hypers=c(names_hypers,"vare")
@@ -423,9 +481,12 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,map=NULL)
 	if(length(names_hypers)>1) names(hyper_est)=names_hypers  
 
 
-	if(op$model=="BayesB") BAout<-list(betahat=meanmu,ghat=meang, yhat=X0%*%meanmu+Z0%*%meang,prob=postprob_save,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,idx=idx,hyper_est=hyper_est,train=vtrain,y=y0)
-	else if (op$model=="SSVS") BAout<-list(betahat=meanmu,ghat=meang, yhat=X0%*%meanmu+Z0%*%meang,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,phisave=phisave,idx=idx,hyper_est=hyper_est,train=vtrain,y=y0)
-	else BAout<-list(betahat=meanmu,ghat=meang, yhat=X0%*%meanmu+Z0%*%meang,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,idx=idx,hyper_est=hyper_est,train=vtrain,y=y0)
+	if(op$model %in% c("BayesB","SSVS")) BAout<-list(betahat=meanmu,ghat=meang, yhat=X0%*%meanmu+Z0%*%meang,
+	                                                 prob=postprob_est,Wprob=Wpostprob_est,eff_sample=effectiveSize(hyperparameters),
+	                                                 hypers=hyperparameters,idx=idx,hyper_est=hyper_est,train=vtrain,y=y0,map=map,win=win,Wchr=chr,GWA=GWA)
+    else BAout<-list(betahat=meanmu,ghat=meang, yhat=X0%*%meanmu+Z0%*%meang,
+                     prob=bpvalue,Wprob=Wprob,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,
+                     idx=idx,hyper_est=hyper_est,train=vtrain,y=y0,map=map,win=win,Wchr=chr,GWA=GWA)
 	
 	class(BAout)="ba"
    	return(BAout)
