@@ -10,9 +10,6 @@
 #' @param op \code{op} object created by create.options that is used for the analysis
 #' @param iterStart the starting iteration for traceplot
 #' @details You can either provide \code{baData} or y and Z for this function. If they're provided at the same time, \code{dataobj} will be used for the analysis
-#' @examples 
-#' baplot(dataobj=pig,BAout=ba,type="pre")
-#' baplot(dataobj=pig,BAout=ba,type="trace",op=op)
 #' @export
 plot.ba <- function(BAout=NULL,type=c("pre","trace"),op=NULL,iterStart=NULL,col=c("black","red")){
 

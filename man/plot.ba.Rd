@@ -28,7 +28,3 @@ Plot the results for the Bayesian models
 \details{
 You can either provide \code{baData} or y and Z for this function. If they're provided at the same time, \code{dataobj} will be used for the analysis
 }
-\examples{
-baplot(dataobj=pig,BAout=ba,type="pre")
-baplot(dataobj=pig,BAout=ba,type="trace",op=op)
-}

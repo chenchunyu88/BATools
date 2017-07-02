@@ -73,27 +73,3 @@ create.options(model = c("GBLUP", "rrBLUP", "BayesA", "BayesB", "SSVS",
 \description{
 Create object for options of bayesian model
 }
-\examples{
-##################One proper option for rrBLUP REML#####################
-init=list(df=NULL,scale=NULL,vare=NULL)
-run_para=list(maxiter=100)
-update_para=list(df=FALSE,scale=TRUE)
-op<-create.options(model="rrBLUP",method="EM",ante=FALSE,priors=NULL,init=init,
-    update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=NULL,convcrit=1E-4)
-    
-##################One proper option for rrBLUP MCMC#####################
-init=list(df=5,scale=NULL,vare=NULL)
-run_para=list(niter=200000,burnIn=100000,skip=10)
-print_mcmc=list(piter=10000)
-update_para=list(df=FALSE,scale=TRUE)
-op<-create.options(model="rrBLUP",method="MCMC",ante=FALSE,priors=NULL,init=init,
-    update_para=update_para,run_para=run_para,save.at="rrBLUP",cv=NULL,print_mcmc=print_mcmc,convcrit=1E-4)
-
-######################One proper option for BayesA MCMC####################
-init=list(df=5,scale=0.01,pi=1)
-run_para=list(niter=20000,burnIn=10000,skip=10)
-print_mcmc=list(piter=2000)
-update_para=list(df=FALSE,scale=TRUE,pi=FALSE)
-op<-create.options(model="BayesA",method="MCMC",ante=FALSE,priors=NULL,init=init,
-    update_para=update_para,run_para=run_para,save.at="BayesA",cv=NULL,print_mcmc=print_mcmc)
-}
