@@ -9,7 +9,6 @@ Depends: R (>= 2.15.0), coda, dplyr, Matrix, caret
 Description: Bayesian Antedependence Model
 License: GPL-3
 Suggests: knitr
-VignetteBuilder: knitr
 LinkingTo: Rcpp, RcppArmadillo
 Imports: Rcpp
 RoxygenNote: 6.0.1.9000
