@@ -28,6 +28,7 @@ set.seed(1234)
 PigPheno=createCV(data = PigPheno,k=5,"driploss")
 cvmapBA<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1)
 cvmapBA
+par(mfrow=c(1,1))
 plot(cvmapBA)
 
 

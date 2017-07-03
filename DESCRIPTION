@@ -1,8 +1,8 @@
 Package: BATools
 Type: Package
-Title: An R Package of Tools for Bayesian Models in Whole Genome Prediction and Genome-wide association Analyses 
-Version: 0.1.3
-Date: 2017-07-02
+Title: BATools: An R package that extends 'Bayesian Alphabet' for Whole Genome Prediction and Genome-wide association study
+Version: 1.1.3
+Date: 2017-07-03
 Author: Chunyu Chen,Robert J. Tempelman
 Maintainer: Chunyu Chen <chench57@msu.edu>
 Depends: R (>= 2.15.0), coda, dplyr, Matrix, caret

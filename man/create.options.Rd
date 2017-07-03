@@ -12,9 +12,11 @@ create.options(model = c("GBLUP", "rrBLUP", "BayesA", "BayesB", "SSVS",
   print_mcmc = NULL, ncore = 1, seed = 1, convcrit = 1e-04)
 }
 \arguments{
-\item{model}{string indicate the model for the analysis, \code{model} can be "GBLUP","BayesA", "BayesB", or "SSVS"}
+\item{model}{string indicate the model for the analysis, \code{model} can be "GBLUP","rrBLUP,"BayesA", "BayesB","SSVS","ssBayesA", "ssBayesB", or "ssSSVS","anteBayesA" and "anteBayesB"}
 
-\item{method}{string indicate the method for the analysis, \code{model} can be "MCMC" or "EM"}
+\item{method}{string indicate the method for the analysis, \code{model} can be "MCMC", "MAP" or "REML"}
+
+\item{ssGBLUPvar}{string indicate the variance component treatment in ssGBLUP \code{ssGBLUPvar} can be c("homVAR", "hetVAR"), default is "homVAR"}
 
 \item{priors}{\code{list} contains priors for the Bayesian model, elements in \code{priors} can be "nu_e","tau2_e",\cr"shape_scale","rate_scale","cdef","alphapi","betapi","mu_m_t","sigma2_m_t",\cr
  "df_var_t","scale_var_t"
@@ -38,7 +40,7 @@ create.options(model = c("GBLUP", "rrBLUP", "BayesA", "BayesB", "SSVS",
 \code{mut}    \code{numeric},  the starting value of \eqn{\mu_t}, default value 0 \cr 
 \code{vart}   \code{numeric},  the starting value of \eqn{\sigma^2_t}, default value 0.5\cr}
 
-\item{D}{\code{string} indicate use relative variances ("V") or relative precisions ("P"), default is "V"}
+\item{D}{\code{string} indicate use relative variances ("V") or relative precisions ("P") in MAP BayesA, default is "P"}
 
 \item{update_para}{\code{list} of \code{logical} indicate whether a parameter is sampled in the Bayesian model, elements in \code{update_para} can be "df","scale","pi","mut","vart"
 \code{df}    \code{logical}, \code{TRUE} if degrees of freedom parameter for SNP effect variance needs to be sampled\cr
@@ -67,9 +69,18 @@ create.options(model = c("GBLUP", "rrBLUP", "BayesA", "BayesB", "SSVS",
 \item{seed}{\code{numeric}, seed for random number generator}
 
 \item{convcrit}{\code{numeric}, convergence criteria for EM, default is 1E-4}
-
-\item{ante}{logical, must be \code{TRUE} or \code{FALSE}}
+}
+\value{
+a object of \code{options} for BATools, it's basicaly a list
 }
 \description{
 Create object for options of bayesian model
+}
+\examples{
+\dontrun{
+  op=create.options(model="SSVS") #This will use the default settings
+
+ #For set your values, check out one of the demos, for example
+ demo(SSVS)
+ }
 }

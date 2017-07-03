@@ -10,10 +10,19 @@ std_geno(x, method = c("s", "c"), freq = NULL)
 \item{x}{genotype matrix or `baData` object}
 
 \item{method}{the method used for centering, `c` is centering and `s` is standardizing}
+
+\item{freq}{allele frequency of the one coded as 1, if not supplied, will use the frequency in \code{x}}
 }
 \value{
 centered genotype matrix  or `baData` object with centered genotype matrix
 }
 \description{
 Re-center genotype matrix
+}
+\examples{
+\dontrun{
+ data("Pig")
+ #Standardize genotype matrix with the allele frequency in F0
+ geno=std_geno(PigM,method="s",freq=PigAlleleFreq)
+}
 }

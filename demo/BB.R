@@ -23,4 +23,5 @@ PigPheno=createCV(data = PigPheno,k=5,"driploss")
 head(PigPheno)
 cvBB<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1)
 cvBB
+par(mfrow=c(1,1))
 plot(cvBB)

@@ -19,3 +19,9 @@ data.frame of the all traits including the cross-validation folds
 \description{
 Quickly create cross-validation folds
 }
+\examples{
+\dontrun{
+set.seed(1234)
+PigPheno=createCV(data = PigPheno,k=5,"driploss")
+}
+}

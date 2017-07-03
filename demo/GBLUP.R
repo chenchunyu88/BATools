@@ -14,7 +14,7 @@ op<-create.options(model="GBLUP",method="REML",priors=NULL,init=init,
                    update_para=update_para,run_para=run_para,save.at="GBLUP",print_mcmc=NULL)
 
 ###Tested it's the same with other REML packages using the default settings
-gblup<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op,map=PigMap,GWA="SNP")
+gblup<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op,map=PigMap,GWA="Win")
 gblup
 par(mfrow=c(1,2))
 man_plot_pvalue(gblup)
@@ -24,4 +24,5 @@ set.seed(1234)
 PigPheno=createCV(data = PigPheno,k=5,"driploss")
 cvgblup<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1)
 cvgblup
+par(mfrow=c(1,1))
 plot(cvgblup)

@@ -33,4 +33,5 @@ set.seed(1234)
 PigPheno=createCV(data = PigPheno,k=5,"driploss")
 cvssSSVS<-baFit(driploss~sex,data=PigPheno,geno=genoNew ,genoid = ~id,options = op, train=~cv1,PedAinv = PigAinv)
 plot(cvssSSVS)
+par(mfrow=c(1,1))
 cvssSSVS

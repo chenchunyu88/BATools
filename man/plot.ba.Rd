@@ -2,8 +2,7 @@
 % Please edit documentation in R/baplot.R
 \name{plot.ba}
 \alias{plot.ba}
-\title{Plot the results for the Bayesian models
- @title plot result for bafit}
+\title{plot result for baFit}
 \usage{
 \method{plot}{ba}(BAout = NULL, type = c("pre", "trace"), op = NULL,
   iterStart = NULL, col = c("black", "red"))
@@ -11,20 +10,39 @@
 \arguments{
 \item{BAout}{\code{ba} object contains all the output of the Bayesian model}
 
-\item{type}{\code{string} defines the type of the plot, which can be "pre","man","trace"
+\item{type}{\code{string} defines the type of the plot, which can be "pre","trace"
 \tabular{ll}{
   \tab \code{"pre"}  plot the predicted value against the true value\cr
   \tab \code{"trace"}  Traceplot \cr
 }}
 
-\item{op}{\code{op} object created by create.options that is used for the analysis}
+\item{op}{\code{op} object created by `create.options` that is used for the analysis}
 
 \item{iterStart}{the starting iteration for traceplot}
+
+\item{col}{color for the plot in cross-validation}
 }
 \description{
 Plot the results for the Bayesian models
- @title plot result for bafit
 }
-\details{
-You can either provide \code{baData} or y and Z for this function. If they're provided at the same time, \code{dataobj} will be used for the analysis
+\examples{
+\dontrun{
+ rm(list=ls())
+ library(BATools)
+ data("Pig")
+ #Standardize genotype matrix
+ #or set your own starting values using 
+ #init=list(df=5,scale=0.01,pi=1) 
+ run_para=list(niter=2000,burnIn=1000,skip=10)
+ print_mcmc=list(piter=500)
+ update_para=list(df=FALSE,scale=TRUE,pi=F)
+ op<-create.options(model="SSVS",method="MCMC",seed=1,priors=NULL,init=init,
+                  update_para=update_para,run_para=run_para,save.at="SSVS",print_mcmc=print_mcmc)
+ #### Cross-validation using BATools
+ set.seed(1234)
+ PigPheno=createCV(data = PigPheno,k=5,"driploss")
+ cvSSVS<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1)
+ par(mfrow=c(1,1))
+ plot(cvSSVS)
+}
 }

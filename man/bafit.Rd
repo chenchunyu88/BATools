@@ -9,21 +9,31 @@ baFit(formula, data, geno, genoid, randomFormula = NULL, map = NULL,
   "Win"))
 }
 \arguments{
-\item{formula}{A list of baData including phenotypes, genotypes and etc.}
+\item{formula}{a formula for the fixed effects}
 
-\item{data}{A list of options to run Bayesian models}
+\item{data}{a `data.frame` containing the phenotypes, should have at least two columns including phenotype and id of the individual}
 
-\item{geno}{A numeric vector of phenotypes}
+\item{geno}{a matrix of genotypes with rownames correpsonds to the id in data}
 
-\item{genoid}{matrix of genotypes}
+\item{genoid}{a forumla indicating the column of `data` contains the IDs related to genotype}
 
-\item{randomFormula}{A string indicating the trait for analysis}
+\item{randomFormula}{a formula for random effects}
+
+\item{map}{genomic map with column of chr (chromosome number) and pos (postion); for window based approach idw (window id) is also required. Refer to PigMap in the pig data as an example}
+
+\item{PedAinv}{the inverse of the additive relationship matrix based on pedigree; this is for single-step approach only}
+
+\item{options}{the `options` object created by `create.options` function to run Bayesian models}
+
+\item{train}{a formula indicating the column of `data` as reference for trainning and validation}
+
+\item{GWA}{a character of in one of c("No","SNP","GWA") indicating what type of GWA for the model; default is "No"; `map` is required for both "SNP" and "Win"}
 }
 \value{
 The result of the analysis as a `ba` object, a list of estimate of fixed and random effects as well as variance components.
 }
 \description{
-baFit function can fit various Bayesian models including rrBLUP, BayesA/B/C, antedependence models and etc. Input data can be either a `baData` object or specify the fixed and random effects seperately.
+baFit function can fit various Bayesian models including rrBLUP/GBLUP, BayesA/B, SSVS, single-step SSVS/BayesA/B, antedependence models and etc.
 }
 \examples{
 \dontrun{

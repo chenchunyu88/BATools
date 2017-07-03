@@ -5,7 +5,7 @@ data("Pig")
 #Standardize genotype matrix
 geno=std_geno(PigM,method="s",freq=PigAlleleFreq)
 
-init=set_init("driploss",data=PigPheno,geno=geno,"id",df=5,pi_snp=0.001,h2=0.5,c=NULL,model="BayesB",centered=TRUE)
+init=set_init("driploss",data=PigPheno,geno=geno,"id",df=5,pi_snp=0.001,h2=0.5,c=NULL,model="anteBayesB",centered=TRUE)
 run_para=list(niter=2000,burnIn=1000,skip=10)
 print_mcmc=list(piter=500)
 update_para=list(df=FALSE,scale=TRUE,pi=F)
@@ -23,4 +23,5 @@ PigPheno=createCV(data = PigPheno,k=5,"driploss")
 head(PigPheno)
 cvssBB<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1,map=PigMap)
 cvssBB
+par(mfrow=c(1,1))
 plot(cvssBB)

@@ -6,7 +6,7 @@ data("Pig")
 geno=std_geno(PigM,method="s",freq=PigAlleleFreq)
 
 
-init=set_init("driploss",data=PigPheno,geno=geno,"id",df=5,pi_snp=1,h2=0.5,c=NULL,model="BayesA",centered=TRUE)
+init=set_init("driploss",data=PigPheno,geno=geno,"id",df=5,pi_snp=1,h2=0.5,c=NULL,model="anteBayesA",centered=TRUE)
 #or set your own starting values using 
 #init=list(df=5,scale=0.01,pi=1) 
 run_para=list(niter=2000,burnIn=1000,skip=10)
@@ -26,4 +26,5 @@ set.seed(1234)
 PigPheno=createCV(data = PigPheno,k=5,"driploss")
 cvanteBA<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1,map = PigMap)
 cvanteBA
+par(mfrow=c(1,1))
 plot(cvanteBA)

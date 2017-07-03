@@ -558,10 +558,10 @@ ssBayesM <- function(op=NULL,y=NULL,M=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL,
 
 	if(op$model %in% c("ssBayesB","ssSSVS")) BAout<-list(betahat=meanmu,ghat=meang, meane ,yhat=X0%*%meanmu+M0%*%meang+U0%*%meane,
 	                                                 prob=postprob_est,Wprob=Wpostprob_est,eff_sample=effectiveSize(hyperparameters),
-	                                                 hypers=hyperparameters,hyper_est=hyper_est,train=vtrain,y=y0,map=map,win=win,Wchr=chr,GWA=GWA)
+	                                                 hypers=hyperparameters,hyper_est=hyper_est,train=vtrain,y=y0,map=map,win=win,Wchr=chr,GWA=GWA,model=op$model)
     else BAout<-list(betahat=meanmu,ghat=meang, ehat=meane,yhat=X0%*%meanmu+M0%*%meang+U0%*%meane,
-                     prob=bpvalue,Wprob=Wprob,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,
-                     hyper_est=hyper_est,train=vtrain,y=y0,map=map,win=win,Wchr=chr,GWA=GWA)
+                     bpvalue=bpvalue,Wprob=Wprob,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,
+                     hyper_est=hyper_est,train=vtrain,y=y0,map=map,win=win,Wchr=chr,GWA=GWA,model=op$model)
 	
 	class(BAout)="ba"
    	return(BAout)

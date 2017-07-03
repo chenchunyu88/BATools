@@ -47,3 +47,9 @@ a list of initial values
 \description{
 Set initial values for hyperparameters
 }
+\examples{
+\dontrun{
+ data(Pig)
+ init=set_init("driploss",data=PigPheno,geno=geno,genoid = "id",model="SSVS",centered=TRUE)
+}
+}
