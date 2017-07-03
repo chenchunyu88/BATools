@@ -19,5 +19,5 @@
 #' @usage data(Pig)
 #' @source \url{https://github.com/steibelj/gwaR/blob/master/data/MSUPRP_sample.RData}
 #' @source How the data is prepared for BATools: \url{https://github.com/chenchunyu88/batoolsdata/blob/master/MSUPRP.ipynb}
-#' @references Jose L Gualdrón Duarte, Rodolfo JC Cantet, Ronald O Bates, Catherine W Ernst, Nancy E Raney and Juan P Steibel. 2014. Rapid screening for phenotype-genotype associations by linear transformations of genomic evaluations. BMC Bioinformatics, 15:246.
+#' @references Jose L Gualdron Duarte, Rodolfo JC Cantet, Ronald O Bates, Catherine W Ernst, Nancy E Raney and Juan P Steibel. 2014. Rapid screening for phenotype-genotype associations by linear transformations of genomic evaluations. BMC Bioinformatics, 15:246.
 NULL

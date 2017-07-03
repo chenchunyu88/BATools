@@ -26,6 +26,6 @@ A dataset containing the MSUPRP example dataset with 176 pig with 20597 SNPs hav
 The example data is a subset of MSUPRP (Gualdrón Duarte et al. 2014). The phenotype used in the example is drip loss in pork.
 }
 \references{
-Jose L Gualdrón Duarte, Rodolfo JC Cantet, Ronald O Bates, Catherine W Ernst, Nancy E Raney and Juan P Steibel. 2014. Rapid screening for phenotype-genotype associations by linear transformations of genomic evaluations. BMC Bioinformatics, 15:246.
+Jose L Gualdron Duarte, Rodolfo JC Cantet, Ronald O Bates, Catherine W Ernst, Nancy E Raney and Juan P Steibel. 2014. Rapid screening for phenotype-genotype associations by linear transformations of genomic evaluations. BMC Bioinformatics, 15:246.
 }
 \keyword{datasets}
