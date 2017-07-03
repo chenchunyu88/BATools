@@ -30,19 +30,19 @@ vec tmp(m);
 res.fill(0);
 I.eye();
 ginv=inv(g);
-cout<<"Computing Cuu for the animal model"<<endl;
+Rprintf("Computing Cuu for the animal model \n");
 Cuu=ginv*l+I-x*inv(x.t()*x)*x.t();
 Cuu=inv(Cuu)*v(0);
 
 
-cout<<"Preparing to Compute diagonal of Cgg "<<endl;
+Rprintf("Preparing to Compute diagonal of Cgg \n");
 va=g*v(1)-Cuu;
 
 AiVAiZ=ginv*va*ginv*z;
 
 tmp=z.t()*(ginv*u);
 
-cout<<"Computing diagonal of Cgg "<<endl;
+Rprintf("Computing diagonal of Cgg \n");
 for(int j=0;j<m;j++){
   res(0,j)=tmp(j);
   for(int i=0;i<n;i++){

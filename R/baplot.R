@@ -32,7 +32,7 @@
 #'  plot(cvSSVS)
 #' }
 #' @export
-plot.ba <- function(BAout=NULL,type=c("pre","trace"),op=NULL,iterStart=NULL,col=c("black","red"),...){
+baplot <- function(BAout=NULL,type=c("pre","trace"),op=NULL,iterStart=NULL,col=c("black","red"),...){
 
   if(is.null(BAout)) stop("BAout must be provided for the function")
 	type=match.arg(type)
