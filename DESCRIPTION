@@ -10,5 +10,5 @@ Description: Bayesian Antedependence Model
 License: GPL-3
 Suggests: knitr
 LinkingTo: Rcpp, RcppArmadillo
-Imports: Rcpp
+Imports: Rcpp, Matrix, caret, coda, dplyr
 RoxygenNote: 6.0.1.9000

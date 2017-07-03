@@ -1,6 +1,6 @@
 #' Create object for options of bayesian model
 #' @export
-#' @title create \code{\link{op}} object
+#' @title create \code{\link{options}} object
 #' @param  model string indicate the model for the analysis, \code{model} can be "GBLUP","rrBLUP,"BayesA", "BayesB","SSVS","ssBayesA", "ssBayesB", or "ssSSVS","anteBayesA" and "anteBayesB"
 #' @param method string indicate the method for the analysis, \code{model} can be "MCMC", "MAP" or "REML"
 #' @param ssGBLUPvar string indicate the variance component treatment in ssGBLUP \code{ssGBLUPvar} can be c("homVAR", "hetVAR"), default is "homVAR"

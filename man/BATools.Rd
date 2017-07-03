@@ -4,10 +4,7 @@
 \name{BATools}
 \alias{BATools}
 \alias{BATools-package}
-\title{BATools}
-\description{
-BATools: An R package that extends 'Bayesian Alphabet' for Whole Genome Prediction and Genome-wide association study
-}
+\title{BATools: An R package that extends 'Bayesian Alphabet' for Whole Genome Prediction and Genome-wide association study}
 \details{
 \describe{
  Package: BATools
