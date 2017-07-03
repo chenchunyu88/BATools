@@ -5,7 +5,7 @@
 \title{plot result for baFit}
 \usage{
 \method{plot}{ba}(BAout = NULL, type = c("pre", "trace"), op = NULL,
-  iterStart = NULL, col = c("black", "red"))
+  iterStart = NULL, col = c("black", "red"), ...)
 }
 \arguments{
 \item{BAout}{\code{ba} object contains all the output of the Bayesian model}

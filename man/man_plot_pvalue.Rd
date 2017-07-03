@@ -13,6 +13,10 @@ man_plot_pvalue(ba, type = c("SNP", "Win"), col = c("black", "red"),
 \item{type}{can be c("SNP","Win") for single SNP or window based Manhattan plot}
 
 \item{col}{color for the Manhattan plot}
+
+\item{ylim}{the range of yaxis}
+
+\item{...}{other plot options}
 }
 \value{
 Null. This function only prints to the screen.

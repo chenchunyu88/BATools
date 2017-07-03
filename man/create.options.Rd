@@ -2,7 +2,7 @@
 % Please edit documentation in R/create.options.R
 \name{create.options}
 \alias{create.options}
-\title{create \code{\link{op}} object}
+\title{create \code{\link{options}} object}
 \usage{
 create.options(model = c("GBLUP", "rrBLUP", "BayesA", "BayesB", "SSVS",
   "ssGBLUP", "ssBayesA", "ssBayesB", "ssSSVS", "anteBayesA", "anteBayesB",
