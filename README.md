@@ -28,26 +28,7 @@ Help can be accessed by typing: `help(BATools)`, `help(bafit)`
 
 Example codes can be found in demo/ folder. 
 
-###Current working models:
-- rrBLUP/GBLUP based on REML and MCMC for WGP and GWA
-- BayesA based on MAP and MCMC for WGP and GWA
-- SSVS based on MAP and MCMC for WGP and GWA
-- BayesB based on MCMC for WGP and GWA
 
-###Future commits:
-1) ONGOING: 
-
-- improve documentation to expand to other capabilities
-
-- add optimized anteBayesA/B to BayesM function
-
-- add optimized IW/CD-BayesA/B to the package
-
-2) GWA capabilities based on EM-BayesA/SSVS
-
-3) implement multi-core computation
-
-4) write complete testing code
 
 
 
