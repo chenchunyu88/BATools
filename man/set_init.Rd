@@ -7,8 +7,8 @@
 set_init(y, data, geno, genoid, df = 5, scale = NULL, vare = NULL,
   g = NULL, beta = NULL, pi_snp = 0.05, post_prob = NULL, h2 = 0.5,
   c = 1000, model = c("rrBLUP", "GBLUP", "BayesA", "BayesB", "SSVS",
-  "ssGBLUP", "ssBayesA", "ssBayesB", "ssSSVS"), varGenetic = NULL,
-  centered = T, from = NULL)
+  "ssGBLUP", "ssBayesA", "ssBayesB", "ssSSVS", "anteBayesA", "anteBayesB"),
+  varGenetic = NULL, centered = T, from = NULL)
 }
 \arguments{
 \item{y}{character phenotypes name}
@@ -35,7 +35,7 @@ set_init(y, data, geno, genoid, df = 5, scale = NULL, vare = NULL,
 
 \item{c}{ratio for the smaller variance for SSVS}
 
-\item{model}{the model used for analysis, can be 'rrBLUP',"GBLUP", 'BayesA','BayesB', or "SSVS", for single step or antedependence model use the base model}
+\item{model}{the model used for analysis, can be c("rrBLUP","GBLUP", "BayesA","BayesB", "SSVS","ssGBLUP", "ssBayesA","ssBayesB", "ssSSVS","anteBayesA","anteBayesB")}
 
 \item{centered}{logical indicating if Z is centered}
 
