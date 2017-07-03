@@ -39,6 +39,24 @@ baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
       if(sum(colnames(map)%in%c("chr","pos","idw"))<3) stop("map should be a data.frame with colnames of chr, pos and idw")
     }
   }
+  
+  if(substr(options$model,1,4)=="ante"){
+  	if(is.null(map)) stop("provide map for antedepedence model") else{
+  		if(max(map$chr)>1){
+  			Tmpmap=map[which(rownames(map)%in%colnames(geno)),]
+			ante_p=rep(0,max(map$chr))
+			ante_p[1]=sum(map$chr==1)
+			for(i in 2:length(ante_p))
+			{
+			 	ante_p[i]=sum(map$chr==i)+ante_p[i-1]
+			}
+  		}else{
+  			ante_p=NULL
+  		}
+  	}
+  }
+  
+  
   id<-model.frame(genoid,data=data,na.action = na.pass)
   id <- eval(id, parent.frame())
   id <-as.character(t(id))
@@ -46,7 +64,7 @@ baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
   
   if(is.null(options)) cat("no options inputed, use the default options.\n")
   
-  if(substr(options$model,1,2)=="ss" | substr(options$model,5,6)=="ss"){
+  if(substr(options$model,1,2)=="ss" || substr(options$model,5,6)=="ss"){
     if(is.null(PedAinv)) stop("Inverse of pedigree based additive relationship matrix is required for single-step approach")
     if(nrow(data)!=nrow(PedAinv)){
       A=Matrix::solve(PedAinv,sparse=TRUE,tol=1e-16)
@@ -73,7 +91,7 @@ baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
   mf <- eval(mf, parent.frame())
   y <- model.response(mf)
   
-  if(nrow(M)>=length(y)) stop("Number of genotyped individual is not less than observation, cannot to single-step")
+  if(nrow(M)>=length(y) && substr(options$model,1,2)=="ss") stop("Number of genotyped individual is not less than observation, cannot to single-step")
   
   names(y)=id
   X <- model.matrix(formula,data=data)
@@ -135,39 +153,39 @@ baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
   }
   
   if(options$model=="ssBayesA"){
-    
+    res<-ssBayesM(op,y,M,X,vtrain,GWA,map,Ainv)
   }
   
   if(options$model=="ssBayesB"){
-    
+    res<-ssBayesM(op,y,M,X,vtrain,GWA,map,Ainv)
   }
   
   if(options$model=="ssSSVS"){
-    
+    res<-ssBayesM(op,y,M,X,vtrain,GWA,map,Ainv)
   }
   
   if(options$model=="anteBayesA"){
-    
+     res<-anteBayesAm(op,y,M,X,vtrain,GWA,map,ante_p)
   }
   
   if(options$model=="anteBayesB"){
-    
+    res<-anteBayesBm(op,y,M,X,vtrain,GWA,map,ante_p)
   }
   
   if(options$model=="anteSSVS"){
-    
+	  stop("anteSSVS not yet available")
   }
   
   if(options$model=="antessBayesA"){
-    
+    stop("antessBayesA not yet available")
   }
   
   if(options$model=="antessBayesB"){
-    
+    stop("antessBayesB not yet available")
   }
   
   if(options$model=="antessSSVS"){
-    
+    stop("antessSSVS not yet available")
   }
   if(op$model=="IWBayesA"){
     
@@ -252,7 +270,7 @@ getMatrix<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,PedA
     stop("This package requires R 2.15.0 or later")
   assign(".BATools.home", file.path(library, pkg),
          pos=match("package:BATools", search()))
-  BATools.version = "1.0.2 (2016-11-30), build 11"
+  BATools.version = "0.2.3 (2017-07-02), build 13"
   assign(".BATools.version", BATools.version, pos=match("package:BATools", search()))
   if(interactive())
   {

@@ -11,7 +11,7 @@ n=dim(geno)[1]
 indexng<-sort(sample(1:n,n%/%5))
 genoNew=geno[-indexng,]
 
-init=set_init("driploss",data=PigPheno,geno=geno,"id",df=5,pi_snp=1,h2=0.5,c=NULL,model="GBLUP",centered=TRUE)
+init=set_init("driploss",data=PigPheno,geno=genoNew,"id",df=5,pi_snp=1,h2=0.5,c=NULL,model="GBLUP",centered=TRUE)
 #or set your own starting values using 
 #init=list(df=5,scale=0.01,pi=1) 
 run_para=list(maxiter=100)

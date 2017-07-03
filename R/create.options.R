@@ -67,7 +67,7 @@ create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ss
 
   
 	#define priors
-	prior_names=c("nu_e","tau2_e","nu_s","tau2_s","shape_scale","rate_scale","cdef","cscalea","alphapi","betapi","df0","Sig0")
+	prior_names=c("nu_e","tau2_e","nu_s","tau2_s","shape_scale","rate_scale","cdef","cscalea","alphapi","betapi","df0","Sig0","def_sigmag0","scale_sigmag0")
 	prior_names_ante=c("nu_e","tau2_e","nu_s","tau2_s","shape_scale","rate_scale","cdef","cscalea","alphapi","betapi","mu_m_t","sigma2_m_t","df_var_t","scale_var_t")
 
 	if(is.null(priors$nu_e)) priors$nu_e=-2
@@ -81,12 +81,12 @@ create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ss
 	}
 
 	
-	if(model=="BayesA")
+	if(model %in% c("BayesA","ssBayesA"))
 	{
 		if(is.null(priors$shape_scale)) priors$shape_scale=0.5
 		if(is.null(priors$rate_scale)) priors$rate_scale=0	
 	}	
-	if(model=="BayesB")
+	if(model %in% c("BayesB","ssBayesB"))
 	{
 		if(is.null(priors$shape_scale)) priors$shape_scale=0.1
 		if(is.null(priors$rate_scale)) priors$rate_scale=0.1	
@@ -95,7 +95,7 @@ create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ss
 	if(is.null(priors$cdef)) priors$cdef=0.5
 	if(is.null(priors$cscalea)) priors$cscalea=0.5
 	
-	if(model%in%c("SSVS","BayesB"))
+	if(model%in%c("SSVS","BayesB","ssSSVS","ssBayesB"))
 	{
 		if(is.null(priors$alphapi)) priors$alphapi=1
 		if(is.null(priors$betapi)) priors$betapi = 9
@@ -106,6 +106,10 @@ create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ss
 		if(is.null(priors$df0)) priors$df0 = 4
 		if(is.null(priors$Sig0)) priors$Sig0 = matrix(c(0.5,0,0,0.5),2,2)	
 	}	
+	if(substr(model,1,2)=="ss"){
+	  if(is.null(priors$def_sigmag0)) priors$def_sigmag0=-1
+	  if(is.null(priors$scale_sigmag0)) priors$scale_sigmag0=0
+	}
 	
 	if(substr(model,1,4)=="ante")
 	{
@@ -113,11 +117,17 @@ create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ss
 		{
 			tmp<-paste(prior_names_ante, collapse=", ")
 			stop("Prior names must be ",tmp)
-		}		
+		}	
+	  if(is.null(priors$nu_e)) priors$nu_e=-1
+	  if(is.null(priors$tau2_e)) priors$tau2_e=0
+	  if(is.null(priors$shape_scale)) priors$shape_scale=0.1
+	  if(is.null(priors$rate_scale)) priors$rate_scale=0.1
 		if(is.null(priors$mu_m_t)) priors$mu_m_t=0
 		if(is.null(priors$sigma2_m_t)) priors$sigma2_m_t=0.01
 		if(is.null(priors$df_var_t)) priors$df_var_t=-1
-		if(is.null(priors$scale_var_t)) priors$scale_var_t=0				
+		if(is.null(priors$scale_var_t)) priors$scale_var_t=0	
+		if(is.null(priors$alphapi)) priors$alphapi=1
+		if(is.null(priors$betapi)) priors$betapi = 9
 	}else{
 		if(!(prod(names(priors) %in% prior_names)))
 		{
@@ -127,11 +137,12 @@ create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ss
 	}	
 
         #define initial values
-	initial_names=c("df","scale","pi","varu","d","Sig","vare","g","beta","c","post_prob")
-	initial_names_ante=c("df","scale","pi","varu","mut","vart")	   
+	initial_names=c("df","scale","pi","varu","d","Sig","vare","g","beta","c","post_prob","varGenetic")
+	initial_names_ante=c("df","scale","pi","varu","mut","vart","vare","g","beta","c","post_prob","varGenetic")  
 
 	if(is.null(init$df)) init$df=5
 	if(is.null(init$scale)) init$scale=0.02
+	if(is.null(init$varGenetic)) init$varGenetic=init$scale
 	if(is.null(init$pi)) 
 	{
 		if(model=="BayesB") init$pi=0.1

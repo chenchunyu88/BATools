@@ -40,7 +40,10 @@ print.ba <- function(ba) {
 #' @param from the source of scale, if it's 'rrBLUP', the scale will be adjusted for BayesA and SSVS
 #' @return a list of initial values
 #' @export
-set_init <- function(y,data,geno,genoid,df=5,scale=NULL,vare=NULL,g=NULL,beta=NULL,pi_snp=0.05,post_prob=NULL,h2=0.5,c=1000,model=c("rrBLUP","GBLUP", "BayesA","BayesB", "SSVS"),centered=T,from=NULL) {    
+set_init <- function(y,data,geno,genoid,df=5,scale=NULL,vare=NULL,g=NULL,
+                     beta=NULL,pi_snp=0.05,post_prob=NULL,h2=0.5,c=1000,
+                     model=c("rrBLUP","GBLUP", "BayesA","BayesB", "SSVS","ssGBLUP", "ssBayesA","ssBayesB", "ssSSVS"),
+                     varGenetic=NULL,centered=T,from=NULL) {    
   if(!is.character(y)) stop("Phenotype name has to be an character")
   model<-match.arg(model)
   
@@ -48,7 +51,13 @@ set_init <- function(y,data,geno,genoid,df=5,scale=NULL,vare=NULL,g=NULL,beta=NU
   id <- eval(id, parent.frame())
   id <-as.character(t(id))
   
-  Z=geno[id,]
+  if(substr(model,1,2)=="ss"){
+    idgeno<-id[which(id %in% rownames(geno))]
+    Z<-geno[idgeno,]  
+  }else(
+    Z<-geno[id,]
+  )
+  
   
   data<- data %>% filter (id %in% rownames(Z))
   mf <- model.frame(as.formula(paste0(y,"~0")), data = data, na.action = na.pass)
@@ -66,14 +75,18 @@ set_init <- function(y,data,geno,genoid,df=5,scale=NULL,vare=NULL,g=NULL,beta=NU
       sumMeanSq= sum((apply(zc,2,mean))^2)
       MSz=sum(z2)/dim(zc)[1]-sumMeanSq
     }
+    tmpSigmaG=rrBLUP=h2*var(y)/MSz
     scale=switch(model,rrBLUP=h2*var(y)/MSz,BayesA=(df-2)*h2*var(y)/df/MSz,
-                 SSVS=c*h2*var(y)/MSz/(c+(1-pi_snp)*(1-c)),BayesB=(df-2)*h2*var(y)/df/MSz/pi_snp)
+                 SSVS=c*h2*var(y)/MSz/(c+(1-pi_snp)*(1-c)),BayesB=(df-2)*h2*var(y)/df/MSz/pi_snp,
+                 ssBayesA=(df-2)*h2*var(y)/df/MSz,
+                 ssSSVS=c*h2*var(y)/MSz/(c+(1-pi_snp)*(1-c)),ssBayesB=(df-2)*h2*var(y)/df/MSz/pi_snp)
   }else{
     if(!is.null(from)){
       if(from %in% c("rrBLUP","GBLUP")){
-        if(model=="BayesA") scale=(df-2)/df*scale
-        if(model=="BayesB") scale=(df-2)/df*scale/pi_snp
-        if(model=="SSVS") scale=c/(c+(1-pi_snp)*(1-c))*scale
+        tmpSigmaG=scale
+        if(model %in% c("BayesA","ssBayesA")) scale=(df-2)/df*scale
+        if(model %in% c("BayesB","ssBayesB")) scale=(df-2)/df*scale/pi_snp
+        if(model %in% c("SSVS","ssSSVS")) scale=c/(c+(1-pi_snp)*(1-c))*scale
       }
     }
   }
@@ -82,11 +95,18 @@ set_init <- function(y,data,geno,genoid,df=5,scale=NULL,vare=NULL,g=NULL,beta=NU
     vare= var(y)*(1-h2)*(df+2) #crossprod(y)/length(y)
   }
   
-	if(!(model%in%c("BayesB","SSVS"))) pi_snp=1
-		
-	init<-list(vare=vare,df=df,scale=scale,g=g,beta=beta,pi=pi_snp)
-	if(model=="SSVS") init<-list(vare=vare,df=df,scale=scale,g=g,beta=beta,pi=pi_snp,post_prob=post_prob,c=c)
-	init
+	if(!(model%in%c("BayesB","ssBayesB","SSVS","ssSSVS"))) pi_snp=1
+	
+  if(substr(model,1,2)=="ss"){
+    if(is.null(varGenetic)) varGenetic=tmpSigmaG
+    init<-list(vare=vare,df=df,scale=scale,g=g,beta=beta,pi=pi_snp,varGenetic=varGenetic)
+    if(model %in% c("SSVS","ssSSVS")) init<-list(vare=vare,df=df,scale=scale,g=g,beta=beta,pi=pi_snp,post_prob=post_prob,c=c,varGenetic=varGenetic)
+  }else{
+    init<-list(vare=vare,df=df,scale=scale,g=g,beta=beta,pi=pi_snp)
+    if(model %in% c("SSVS","ssSSVS")) init<-list(vare=vare,df=df,scale=scale,g=g,beta=beta,pi=pi_snp,post_prob=post_prob,c=c)
+    
+  }	
+  init
 }
 
 
@@ -145,20 +165,25 @@ createCV<-function(data,k=5,y){
 #' @export
 man_plot_prob<-function(ba,type=c("SNP","Win"), col = c("black", "red"),...){
   type<-match.arg(type)
-  if(ba$GWA!="Win" && type=="Win") stop("Window based GWA is require to create plot for window based approach, redo analysis with GWA=Win")
-  if(type=="SNP"){
-    p<-ba$prob
-    Chromsome_id=ba$map$chr
+  if(ba$model %in% c("rrBLUP","BayesA","anteBayesA") && type=="SNP"){
+    ba$pvalue=ba$bpvalue
+    man_plot_pvalue(ba)
+  }else{
+    if(ba$GWA!="Win" && type=="Win") stop("Window based GWA is require to create plot for window based approach, redo analysis with GWA=Win")
+    if(type=="SNP"){
+      p<-ba$prob
+      Chromsome_id=ba$map$chr
+    }
+    if(type=="Win"){
+      p=ba$Wprob
+      Chromsome_id=ba$Wchr
+    }
+    plot(p, pch = 20, col = col[(Chromsome_id%%2) + 1], ylab = "Posterior probability", xlab = "Chromsome",  axes = F,...)
+    axis(2)
+    lns <- (by(Chromsome_id,Chromsome_id , length))
+    axis(1, at = c(0, cumsum(lns)[-length(lns)]) + as.vector(lns/2), labels = names(lns))
+    box()
   }
-  if(type=="Win"){
-    p=ba$Wprob
-    Chromsome_id=ba$Wchr
-  }
-  plot(p, pch = 20, col = col[(Chromsome_id%%2) + 1], ylab = "Posterior probability", xlab = "Chromsome",  axes = F,...)
-  axis(2)
-  lns <- (by(Chromsome_id,Chromsome_id , length))
-  axis(1, at = c(0, cumsum(lns)[-length(lns)]) + as.vector(lns/2), labels = names(lns))
-  box()
   #abline(h = 0.9, lwd = 2, col = "green")
 }
 

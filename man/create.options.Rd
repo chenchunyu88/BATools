@@ -6,10 +6,10 @@
 \usage{
 create.options(model = c("GBLUP", "rrBLUP", "BayesA", "BayesB", "SSVS",
   "ssGBLUP", "ssBayesA", "ssBayesB", "ssSSVS", "anteBayesA", "anteBayesB",
-  "anteSSVS", "IWBayesA"), method = c("MCMC", "MAP", "REML"), priors = NULL,
-  init = NULL, D = "V", update_para = NULL, run_para = NULL,
-  save.at = NULL, print_mcmc = NULL, ncore = 1, seed = 1,
-  convcrit = 1e-04)
+  "anteSSVS", "IWBayesA"), method = c("MCMC", "MAP", "REML"),
+  ssGBLUPvar = c("homVAR", "hetVAR"), priors = NULL, init = NULL,
+  D = "V", update_para = NULL, run_para = NULL, save.at = NULL,
+  print_mcmc = NULL, ncore = 1, seed = 1, convcrit = 1e-04)
 }
 \arguments{
 \item{model}{string indicate the model for the analysis, \code{model} can be "GBLUP","BayesA", "BayesB", or "SSVS"}

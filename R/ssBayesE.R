@@ -134,6 +134,7 @@ ssBayesE= function(op=NULL,y=NULL,M=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL,Ai
 	Ginv=solve(MMstar)
 	
 	vara=varg=scalea
+	if(op$ssGBLUPvar=="hetVAR") varg=op$init$varGenetic 
 	
 	thetakeep = array(0,ncol(W))
 	convcrit = op$convcrit

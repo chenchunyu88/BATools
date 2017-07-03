@@ -19,7 +19,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_pvalue
-NumericMatrix get_pvalue(NumericVector U, NumericVector V, NumericMatrix G, NumericMatrix Z, NumericMatrix X);
+List get_pvalue(NumericVector U, NumericVector V, NumericMatrix G, NumericMatrix Z, NumericMatrix X);
 RcppExport SEXP BATools_get_pvalue(SEXP USEXP, SEXP VSEXP, SEXP GSEXP, SEXP ZSEXP, SEXP XSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -34,16 +34,34 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP anteBayesAC(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP anteBayesBC(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP BayesAassociate(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP BayesACL(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP BayesAintercept(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP BayesAslope(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP BayesBC(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP BayesCC(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP sample_scale(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP sample_snp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP sample_vars(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+RcppExport SEXP sampleeff(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
     {"BATools_set_ZD", (DL_FUNC) &BATools_set_ZD, 2},
     {"BATools_get_pvalue", (DL_FUNC) &BATools_get_pvalue, 5},
+    {"anteBayesAC",        (DL_FUNC) &anteBayesAC,        14},
+    {"anteBayesBC",        (DL_FUNC) &anteBayesBC,        21},
+    {"BayesAassociate",    (DL_FUNC) &BayesAassociate,    10},
     {"BayesACL",           (DL_FUNC) &BayesACL,            9},
+    {"BayesAintercept",    (DL_FUNC) &BayesAintercept,     9},
+    {"BayesAslope",        (DL_FUNC) &BayesAslope,         8},
     {"BayesBC",            (DL_FUNC) &BayesBC,            16},
     {"BayesCC",            (DL_FUNC) &BayesCC,            13},
+    {"sample_scale",       (DL_FUNC) &sample_scale,        7},
+    {"sample_snp",         (DL_FUNC) &sample_snp,          9},
+    {"sample_vars",        (DL_FUNC) &sample_vars,         8},
+    {"sampleeff",          (DL_FUNC) &sampleeff,           8},
     {NULL, NULL, 0}
 };
 

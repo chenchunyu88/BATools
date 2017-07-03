@@ -6,7 +6,8 @@
 \usage{
 set_init(y, data, geno, genoid, df = 5, scale = NULL, vare = NULL,
   g = NULL, beta = NULL, pi_snp = 0.05, post_prob = NULL, h2 = 0.5,
-  c = 1000, model = c("rrBLUP", "GBLUP", "BayesA", "BayesB", "SSVS"),
+  c = 1000, model = c("rrBLUP", "GBLUP", "BayesA", "BayesB", "SSVS",
+  "ssGBLUP", "ssBayesA", "ssBayesB", "ssSSVS"), varGenetic = NULL,
   centered = T, from = NULL)
 }
 \arguments{
