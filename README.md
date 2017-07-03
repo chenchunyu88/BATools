@@ -18,7 +18,7 @@ steps (recommended: use Rstudio to run this):
 
 `devtools::install_github("hadley/devtools")` 
 
-`devtools::install_github("chenchunyu88/BATools",build_vignettes=T)`
+`devtools::install_github("chenchunyu88/BATools")`
 
 Or, you can download it as an .zip file and use `R CMD INSTALL BATools` to install it in the command line.
 
