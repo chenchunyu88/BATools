@@ -34,7 +34,7 @@ aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL)
   ng=rownames(Z)
   np=names(y)
   idx <- Reduce(intersect, list(nx,ng,np))
-  X=X[idx,]
+  if(dim(X)[2]==1) X=as.matrix(X[idx,],ncol=1) else X=X[idx,]
   y=y[idx]
   Z=Z[idx,]
   
@@ -198,7 +198,7 @@ aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL)
 		if(op$model=="BayesA") cat("BayesA MAP iter=",iter,"\n")
 		if(op$model %in% c("rrBLUP","GBLUP"))  cat("GBLUP iter=",iter,"\n")
 		cat ("Residual Variance is ",vare,sep="")
-		cat (" Scale is ",scalea,sep="")
+		cat (" Marker Variance is ",scalea,sep="")
 		if(op$model=="SSVS") cat (" pi is ",pi_snp,sep="")
 		cat ("\n")
 		
@@ -232,15 +232,15 @@ aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL)
 
 	if(op$model=="SSVS"){
 		hyper_est=c(vare,scalea,pi_snp)
-		names(hyper_est)=c("vare","scale","pi")
+		names(hyper_est)=c("vare","varMarker","pi")
 	}
 	if(op$model=="BayesA"){
 		hyper_est=c(vare,scalea)
-		names(hyper_est)=c("vare","scale")
+		names(hyper_est)=c("vare","varMarker")
 	}
 	if(op$model %in% c("rrBLUP","GBLUP")){
 		hyper_est=c(vare,scalea)
-		names(hyper_est)=c("vare","scale")
+		names(hyper_est)=c("vare","varMarker")
 	}
 	
 	if(GWA!="No"){
@@ -382,9 +382,9 @@ aBayesE= function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL)
 	}
 	save(SNPeff,iter,tscale,tvare,tpi,thetakeep_a,varg,Cgg,theta,file = paste(op$save.at,op$seed,".RData",sep=""))
 	
-   BAout<-list(betahat=betahat,ghat=SNPeff, yhat=yhat,y=y0,train=vtrain,
-	   hyper_est=hyper_est,Cgg=Cgg,varg=varg,pi_snp=pi_snp,phi_est=phi_est,
-	   idx=idx,iter=iter,sdbeta=sdbeta,model=op$model,df=def,GWA=GWA,win=win,pvalue=pvalue,
+   BAout<-list(bhat=betahat,ahat=SNPeff, yhat=yhat,y=y0,train=vtrain,
+	   hyper_est=hyper_est,Cgg=Cgg,varg=varg,pi_snp=pi_snp,postprob=phi_est,
+	   idx=idx,iter=iter,sdb=sdbeta,model=op$model,df=def,GWA=GWA,win=win,pvalue=pvalue,
 	   zscore=zscore,Wpvalue=Wpvalue,wCh=wCh,map=map,Wchr=chr)
   
   	class(BAout)="ba"

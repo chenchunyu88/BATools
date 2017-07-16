@@ -50,10 +50,10 @@ baplot <- function(BAout=NULL,type=c("pre","trace"),op=NULL,iterStart=NULL,col=c
 		if(type=="pre")
 		{
 			if(!is.null(BAout$train)) {
-			  plot(BAout$y,BAout$yhat,xlab="true values of the phenotype",ylab="predicted values",col=col[(!BAout$train%%2)+1],pch = 20)
+			  plot(BAout$y,BAout$yhat,xlab="true values of the phenotype",ylab="predicted values",col=col[(!BAout$train%%2)+1],pch = 20,...)
 			  legend("topleft",legend=c("Train","Val"),col = col,pch=20)
 			}
-			  else plot(BAout$y,BAout$yhat,xlab="true values of the phenotype",ylab="predicted values",col=col[1],pch = 20)
+			  else plot(BAout$y,BAout$yhat,xlab="true values of the phenotype",ylab="predicted values",col=col[1],pch = 20,...)
 		  abline(a=0,b=1)
 			#if(!is.null(yNa))
 			#{

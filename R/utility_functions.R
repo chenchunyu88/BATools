@@ -20,17 +20,17 @@
 #' }
 #' @export
 print.ba <- function(x,...) {    
-    cat("BATools analysis of trait:", ba$trait, "\n")    
+    cat("Result of BATools: \n")    
     cat("\nestimated fixed effects:\n")
-    print(x$betahat)
-    if(!is.null(x$sdbeta)){
+    print(x$bhat)
+    if(!is.null(x$sdb)){
       cat("\nSD\n")
-      print(x$sdbeta)
+      print(x$sdb)
     }
     cat("\nestimated hyperparameters:\n")
     print(x$hyper_est)
-    if(!is.null(ba$eff_sample)) {
-	    cat("\neffective sample size for hyperparameters: \n")
+    if(!is.null(x$eff_sample)) {
+	    cat("\neffective sample size for hyperparameters/variance components: \n")
 	    print(x$eff_sample)
     }
     if(!is.null(x$train)){
@@ -58,17 +58,18 @@ print.ba <- function(x,...) {
 #' @return a list of initial values
 #' @examples \dontrun{
 #'  data(Pig)
-#'  init=set_init("driploss",data=PigPheno,geno=geno,genoid = "id",model="SSVS",centered=TRUE)
+#'  init=set_init(driploss~1,data=PigPheno,geno=geno,genoid = ~id,model="SSVS",centered=TRUE)
 #' }
 #' @export
-set_init <- function(y,data,geno,genoid,df=5,scale=NULL,vare=NULL,g=NULL,
+set.init <- function(formula,data,geno,genoid,df=5,scale=NULL,vare=NULL,g=NULL,
                      beta=NULL,pi_snp=0.05,post_prob=NULL,h2=0.5,c=1000,
-                     model=c("rrBLUP","GBLUP", "BayesA","BayesB", "SSVS","ssGBLUP", "ssBayesA","ssBayesB", "ssSSVS","anteBayesA","anteBayesB"),
+                     model=c("GBLUP","rrBLUP", "BayesA","BayesB", "SSVS","ssGBLUP", "ssBayesA","ssBayesB", "ssSSVS","anteBayesA","anteBayesB"),
                      varGenetic=NULL,centered=T,from=NULL) {    
-  if(!is.character(y)) stop("Phenotype name has to be an character")
+  #if(!is.character(y)) stop("Phenotype name has to be an character")
   model<-match.arg(model)
   
-  id<-model.frame(as.formula(paste0("~",genoid)),data=data,na.action = na.pass)
+  #id<-model.frame(as.formula(paste0("~",genoid)),data=data,na.action = na.pass)
+  id<-model.frame(genoid,data=data,na.action = na.pass)
   id <- eval(id, parent.frame())
   id <-as.character(t(id))
   
@@ -81,9 +82,10 @@ set_init <- function(y,data,geno,genoid,df=5,scale=NULL,vare=NULL,g=NULL,
   
   
   data<- data %>% filter (id %in% rownames(Z))
-  mf <- model.frame(as.formula(paste0(y,"~0")), data = data, na.action = na.pass)
+  #mf <- model.frame(as.formula(paste0(y,"~0")), data = data, na.action = na.pass)
+  mf <- model.frame(formula, data = data, na.action = na.pass)
   mf <- eval(mf, parent.frame())
-  y <- model.response(mf)
+  y <- as.numeric(t(mf))
   
   if(is.null(scale)){
     if(centered){
@@ -97,10 +99,11 @@ set_init <- function(y,data,geno,genoid,df=5,scale=NULL,vare=NULL,g=NULL,
       MSz=sum(z2)/dim(zc)[1]-sumMeanSq
     }
     tmpSigmaG=rrBLUP=h2*var(y)/MSz
-    scale=switch(model,rrBLUP=h2*var(y)/MSz,BayesA=(df-2)*h2*var(y)/df/MSz,
+    scale=switch(model,rrBLUP=h2*var(y)/MSz,GBLUP=h2*var(y)/MSz,BayesA=(df-2)*h2*var(y)/df/MSz,
                  SSVS=c*h2*var(y)/MSz/(c+(1-pi_snp)*(1-c)),BayesB=(df-2)*h2*var(y)/df/MSz/pi_snp,
-                 ssBayesA=(df-2)*h2*var(y)/df/MSz,
-                 ssSSVS=c*h2*var(y)/MSz/(c+(1-pi_snp)*(1-c)),ssBayesB=(df-2)*h2*var(y)/df/MSz/pi_snp)
+                 ssBayesA=(df-2)*h2*var(y)/df/MSz,anteBayesA=(df-2)*h2*var(y)/df/MSz,
+                 ssSSVS=c*h2*var(y)/MSz/(c+(1-pi_snp)*(1-c)),ssBayesB=(df-2)*h2*var(y)/df/MSz/pi_snp,
+                 anteBayesB=(df-2)*h2*var(y)/df/MSz/pi_snp)
   }else{
     if(!is.null(from)){
       if(from %in% c("rrBLUP","GBLUP")){
@@ -113,10 +116,10 @@ set_init <- function(y,data,geno,genoid,df=5,scale=NULL,vare=NULL,g=NULL,
   }
 
   if(is.null(vare)){
-    vare= var(y)*(1-h2)*(df+2) #crossprod(y)/length(y)
+    vare= var(y)*(1-h2) #*(df+2) df=-1 #crossprod(y)/length(y)
   }
   
-	if(!(model%in%c("BayesB","ssBayesB","SSVS","ssSSVS"))) pi_snp=1
+	if(!(model%in%c("BayesB","ssBayesB","anteBayesB","SSVS","ssSSVS"))) pi_snp=1
 	
   if(substr(model,1,2)=="ss"){
     if(is.null(varGenetic)) varGenetic=tmpSigmaG
@@ -165,24 +168,22 @@ std_geno <- function(x,method=c("s","c"),freq=NULL) {
 #' Quickly create cross-validation folds
 #' @param data dataframe contain the phenotypes
 #' @param k number of folds
-#' @param y charactor of the trait name
+#' @param formula formula of the trait name
 #' @return data.frame of the all traits including the cross-validation folds
 #' @examples \dontrun{
 #' set.seed(1234)
 #' PigPheno=createCV(data = PigPheno,k=5,"driploss")
 #' }
 #' @export
-createCV<-function(data,k=5,y){
+createCV<-function(formula,data,k=5){
   cln<-colnames(data)
   coli=which(substr(cln,1,2)!="cv")
   data<-data[,coli]
-  if(is.null(y)){
-    y=data[,1]
-  }else{
-    mf <- model.frame(as.formula(paste0(y,"~0")), data = data, na.action = na.pass)
-    mf <- eval(mf, parent.frame())
-    y <- model.response(mf)
-  }
+
+  mf <- model.frame(formula , data = data, na.action = na.pass)
+  mf <- eval(mf, parent.frame())
+  y <- as.numeric(t(mf))
+  
   cvs<-createFolds(y,k=k,list=F)
   cln<-colnames(data)
   newdata<-c()
@@ -193,6 +194,50 @@ createCV<-function(data,k=5,y){
   cbind(data,newdata)
 }
 
+###createFolds from caret R package
+createFolds<-function (y, k = 10, list = TRUE, returnTrain = FALSE) 
+{
+  if (class(y)[1] == "Surv") 
+    y <- y[, "time"]
+  if (is.numeric(y)) {
+    cuts <- floor(length(y)/k)
+    if (cuts < 2) 
+      cuts <- 2
+    if (cuts > 5) 
+      cuts <- 5
+    breaks <- unique(quantile(y, probs = seq(0, 1, length = cuts)))
+    y <- cut(y, breaks, include.lowest = TRUE)
+  }
+  if (k < length(y)) {
+    y <- factor(as.character(y))
+    numInClass <- table(y)
+    foldVector <- vector(mode = "integer", length(y))
+    for (i in 1:length(numInClass)) {
+      min_reps <- numInClass[i]%/%k
+      if (min_reps > 0) {
+        spares <- numInClass[i]%%k
+        seqVector <- rep(1:k, min_reps)
+        if (spares > 0) 
+          seqVector <- c(seqVector, sample(1:k, spares))
+        foldVector[which(y == names(numInClass)[i])] <- sample(seqVector)
+      }
+      else {
+        foldVector[which(y == names(numInClass)[i])] <- sample(1:k, 
+                                                               size = numInClass[i])
+      }
+    }
+  }
+  else foldVector <- seq(along = y)
+  if (list) {
+    out <- split(seq(along = y), foldVector)
+    names(out) <- paste("Fold", gsub(" ", "0", format(seq(along = out))), 
+                        sep = "")
+    if (returnTrain) 
+      out <- lapply(out, function(data, y) y[-data], y = seq(along = y))
+  }
+  else out <- foldVector
+  out
+}
 
 #' Create Manhattan plot for posterior probability based models
 #' @param ba an object of the class \code{ba} generated by baFit
@@ -224,7 +269,7 @@ man_plot_prob<-function(ba,type=c("SNP","Win"), col = c("black", "red"),...){
   type<-match.arg(type)
   if(ba$model %in% c("rrBLUP","BayesA","anteBayesA","ssBayesA") && type=="SNP"){
     ba$pvalue=ba$bpvalue
-    man_plot_pvalue(ba)
+    man_plot_pvalue(ba,...)
   }else{
     if(ba$GWA!="Win" && type=="Win") stop("Window based GWA is require to create plot for window based approach, redo analysis with GWA=Win")
     if(type=="SNP"){
@@ -244,6 +289,39 @@ man_plot_prob<-function(ba,type=c("SNP","Win"), col = c("black", "red"),...){
   #abline(h = 0.9, lwd = 2, col = "green")
 }
 
+
+#' @export
+man_plot_assoc<-function(ba, col = c("black", "red"),...){
+  #type<-match.arg(type)
+  if(ba$model %in% c("anteBayesA","anteBayesB")){
+     map=ba$map
+     if(max(map$chr)>1){
+      #Tmpmap=map[which(rownames(map)%in%colnames(geno)),]
+      ante_p=rep(0,max(map$chr))
+      ante_p[1]=sum(map$chr==1)
+      for(i in 2:length(ante_p))
+      {
+        ante_p[i]=sum(map$chr==i)+ante_p[i-1]
+      }
+    }else{
+      ante_p=NULL
+    }
+      antet<-ba$ante_t[-ante_p]
+      mapt<-ba$map[names(antet),]
+      Chromsome_id=mapt$chr
+   
+    plot(abs(antet), pch = 20, col = col[(Chromsome_id%%2) + 1], ylab = "Abs(t)", xlab = "Chromsome",  axes = F,...)
+    axis(2)
+    lns <- (by(Chromsome_id,Chromsome_id , length))
+    axis(1, at = c(0, cumsum(lns)[-length(lns)]) + as.vector(lns/2), labels = names(lns))
+    box()
+  }else{
+    
+    stop("This model is not antedependence model")
+   
+  }
+  
+}
 
 #' Create Manhattan plot for pvalue based models
 #' @param ba an object of the class \code{ba} generated by baFit

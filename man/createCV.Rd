@@ -4,14 +4,14 @@
 \alias{createCV}
 \title{Quickly create cross-validation folds}
 \usage{
-createCV(data, k = 5, y)
+createCV(formula, data, k = 5)
 }
 \arguments{
+\item{formula}{formula of the trait name}
+
 \item{data}{dataframe contain the phenotypes}
 
 \item{k}{number of folds}
-
-\item{y}{charactor of the trait name}
 }
 \value{
 data.frame of the all traits including the cross-validation folds

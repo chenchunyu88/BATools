@@ -5,7 +5,7 @@ Version: 1.1.3
 Date: 2017-07-03
 Author: Chunyu Chen,Robert J. Tempelman
 Maintainer: Chunyu Chen <chench57@msu.edu>
-Depends: R (>= 2.15.0), coda, dplyr, Matrix, caret
+Depends: R (>= 2.15.0), coda, dplyr, Matrix, msm, pedigreemm, magrittr
 Description: Bayesian Antedependence Model
 License: GPL-3
 Suggests: knitr

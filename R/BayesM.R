@@ -73,7 +73,7 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL)
 	ng=rownames(Z)
 	np=names(y)
 	idx <- Reduce(intersect, list(nx,ng,np))
-	X=X[idx,]
+	if(dim(X)[2]==1) X=as.matrix(X[idx,],ncol=1) else X=X[idx,]
 	y=y[idx]
 	Z=Z[idx,]
 	
@@ -332,7 +332,7 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL)
 	        if (op$update_para$scale & !(op$update_para$df)) 
 	         {  #"START" OF SAMPLE THE SCALE PARAMETER 
 	              shape_g = 0.5*(G1*def)+op$priors$shape_scale
-	   		      scale_g = 0.5*def*sum(1/varq[which(varq>0)])+op$priors$rate_scale
+	   		        scale_g = 0.5*def*sum(1/varq[which(varq>0)])+op$priors$rate_scale
 	              scalea = rgamma(1,shape=shape_g,rate=scale_g)
 	         } #"END" OF SAMPLE THE SCALE PARAMETER   
 		     
@@ -481,10 +481,10 @@ BayesM <- function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL)
 	if(length(names_hypers)>1) names(hyper_est)=names_hypers  
 
 
-	if(op$model %in% c("BayesB","SSVS")) BAout<-list(betahat=meanmu,ghat=meang, yhat=X0%*%meanmu+Z0%*%meang,
+	if(op$model %in% c("BayesB","SSVS")) BAout<-list(bhat=meanmu,ahat=meang, yhat=X0%*%meanmu+Z0%*%meang,
 	                                                 prob=postprob_est,Wprob=Wpostprob_est,eff_sample=effectiveSize(hyperparameters),
 	                                                 hypers=hyperparameters,idx=idx,hyper_est=hyper_est,train=vtrain,y=y0,map=map,win=win,Wchr=chr,GWA=GWA,model=op$model)
-    else BAout<-list(betahat=meanmu,ghat=meang, yhat=X0%*%meanmu+Z0%*%meang,
+    else BAout<-list(bhat=meanmu,ahat=meang, yhat=X0%*%meanmu+Z0%*%meang,
                      bpvalue=bpvalue,Wprob=Wprob,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,
                      idx=idx,hyper_est=hyper_est,train=vtrain,y=y0,map=map,win=win,Wchr=chr,GWA=GWA,model=op$model)
 	

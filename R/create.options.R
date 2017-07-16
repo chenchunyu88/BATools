@@ -57,9 +57,9 @@
 #'  #For set your values, check out one of the demos, for example
 #'  demo(SSVS)
 #'  }
-create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ssGBLUP","ssBayesA","ssBayesB","ssSSVS",
+set.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ssGBLUP","ssBayesA","ssBayesB","ssSSVS",
                                    "anteBayesA","anteBayesB","anteSSVS","IWBayesA"),method=c("MCMC","MAP","REML"),ssGBLUPvar=c("homVAR","hetVAR"),
-                                    priors=NULL,init=NULL,D="V",update_para=NULL,
+                                    priors=NULL,init=NULL,D="P",update_para=NULL,
                                     run_para=NULL,save.at=NULL,print_mcmc=NULL,ncore=1,seed=1,convcrit=1E-4){
 
     model<-match.arg(model)
@@ -68,8 +68,8 @@ create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ss
    
   	
   	#define methods
-  	if(model=="GBLUP") methods="REML"
-	  methods=c("MCMC","MAP","REML")
+  	if(model=="GBLUP") method="REML"
+	  #methods=c("MCMC","MAP","REML")
   	if(is.null(method)) method="MCMC"
 
   
@@ -241,21 +241,21 @@ create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ss
 			{
 				stop("Running parameter names for MAP must be maxiter")
 			}
-			if(is.null(run_para$maxiter)) {run_para$maxiter=500}
+			if(is.null(run_para$maxiter)) {run_para$maxiter=50}
 		}	
 	}else{
 		if(method=="MCMC")
 		{
 			if(is.null(run_para$niter)) {run_para$niter=50000}
-			if(is.null(run_para$burnIn)) {run_para$burnIn=10000}
+			if(is.null(run_para$burnIn)) {run_para$burnIn=30000}
 			if(is.null(run_para$skip)) {run_para$skip=10}
 		}else{
-			if(is.null(run_para$maxiter)) {run_para$maxiter=500}
+			if(is.null(run_para$maxiter)) {run_para$maxiter=50}
 		}
 	}
 	
 	#define save.at
-	if(is.null(save.at)) save.at=""
+	if(is.null(save.at)) save.at=model
 	
 	
 	#define print options
@@ -267,7 +267,7 @@ create.options <- function(model=c("GBLUP","rrBLUP","BayesA","BayesB","SSVS","ss
 			tmp<-paste(run_names_MCMC, collapse=", ")
 			stop("Printing parameter names must be one of ",tmp)
 		}
-		if(is.null(print_mcmc$piter)) print_mcmc$piter=10000
+		if(is.null(print_mcmc$piter)) print_mcmc$piter=500
 		if(is.null(print_mcmc$time_est)) print_mcmc$time_est=T
 		if(is.null(print_mcmc$print_to)) print_mcmc$print_to="screen"
 		if(!is.numeric(print_mcmc$piter)) stop("piter must be numeric")

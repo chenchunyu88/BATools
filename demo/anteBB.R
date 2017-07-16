@@ -5,23 +5,23 @@ data("Pig")
 #Standardize genotype matrix
 geno=std_geno(PigM,method="s",freq=PigAlleleFreq)
 
-init=set_init("driploss",data=PigPheno,geno=geno,"id",df=5,pi_snp=0.001,h2=0.5,c=NULL,model="anteBayesB",centered=TRUE)
+init=set.init(~driploss,data=PigPheno,geno=geno,~id,df=5,pi_snp=0.001,h2=0.5,c=NULL,model="anteBayesB",centered=TRUE)
 run_para=list(niter=2000,burnIn=1000,skip=10)
 print_mcmc=list(piter=500)
 update_para=list(df=FALSE,scale=TRUE,pi=F)
-op<-create.options(model="anteBayesB",method="MCMC",priors=NULL,init=init,
-                   update_para=update_para,run_para=run_para,save.at="BayesB",print_mcmc=print_mcmc)
+op<-set.options(model="anteBayesB",method="MCMC",priors=NULL,init=init,
+                   update_para=update_para,run_para=run_para,save.at="anteBayesB",print_mcmc=print_mcmc)
 
-ssBB<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op,map=PigMap,GWA="Win")
-ssBB
+anteBB<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op,map=PigMap,GWA="Win")
+anteBB
 par(mfrow=c(1,2))
-man_plot_prob(ssBB)
-man_plot_prob(ssBB,type="Win")
+man_plot_prob(anteBB)
+man_plot_prob(anteBB,type="Win")
 #### Cross-validation using BATools
 set.seed(1234)
-PigPheno=createCV(data = PigPheno,k=5,"driploss")
+PigPheno=createCV(~driploss,data = PigPheno,k=5)
 head(PigPheno)
-cvssBB<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1,map=PigMap)
-cvssBB
+cvanteBB<-baFit(driploss~sex,data=PigPheno,geno=geno ,genoid = ~id,options = op, train=~cv1,map=PigMap)
+cvanteBB
 par(mfrow=c(1,1))
-plot(cvssBB)
+baplot(cvanteBB)

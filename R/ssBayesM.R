@@ -36,6 +36,7 @@ ssBayesM <- function(op=NULL,y=NULL,M=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL,
   g_names=rownames(Ainv)[g_id]
   ng_names=rownames(Ainv)[-g_id]
   
+  Ainv=as.matrix(Ainv)
   
   Ainv11=Ainv[-g_id,-g_id]
   Ainv12<-Ainv[-g_id,g_id]
@@ -52,8 +53,8 @@ ssBayesM <- function(op=NULL,y=NULL,M=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL,
 	U=matrix(0,dim(Z)[1],dim(Z1)[2])
 	U[1:dim(Z1)[2],1:dim(Z1)[2]]=Z1
 	
-	X1=X[ng_names,]
-	X2=X[g_names,] 
+	if(dim(X)[2]==1) X1=as.matrix(X[ng_names,],ncol=1) else X1=X[ng_names,]
+	if(dim(X)[2]==1) X2=as.matrix(X[g_names,],ncol=1) else X2=X[g_names,] 
 	X=rbind(X1,X2)
 	
 	y1=y[ng_names]
@@ -556,10 +557,10 @@ ssBayesM <- function(op=NULL,y=NULL,M=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL,
 	if(length(names_hypers)>1) names(hyper_est)=names_hypers  
 
 
-	if(op$model %in% c("ssBayesB","ssSSVS")) BAout<-list(betahat=meanmu,ghat=meang, meane ,yhat=X0%*%meanmu+M0%*%meang+U0%*%meane,
+	if(op$model %in% c("ssBayesB","ssSSVS")) BAout<-list(bhat=meanmu,ahat=meang, meane ,yhat=X0%*%meanmu+M0%*%meang+U0%*%meane,
 	                                                 prob=postprob_est,Wprob=Wpostprob_est,eff_sample=effectiveSize(hyperparameters),
 	                                                 hypers=hyperparameters,hyper_est=hyper_est,train=vtrain,y=y0,map=map,win=win,Wchr=chr,GWA=GWA,model=op$model)
-    else BAout<-list(betahat=meanmu,ghat=meang, ehat=meane,yhat=X0%*%meanmu+M0%*%meang+U0%*%meane,
+    else BAout<-list(bhat=meanmu,ahat=meang, ehat=meane,yhat=X0%*%meanmu+M0%*%meang+U0%*%meane,
                      bpvalue=bpvalue,Wprob=Wprob,eff_sample=effectiveSize(hyperparameters),hypers=hyperparameters,
                      hyper_est=hyper_est,train=vtrain,y=y0,map=map,win=win,Wchr=chr,GWA=GWA,model=op$model)
 	

@@ -6,7 +6,7 @@ anteBayesAm =function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL
 {   # START OF FUNCTION
 
   set.seed(op$seed)  
-
+  pi_math = 3.14159265359	
   whichNa=which(vtrain==FALSE)
   Z0=Z
   y0=y
@@ -47,7 +47,7 @@ anteBayesAm =function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL
   ng=rownames(Z)
   np=names(y)
   idx <- Reduce(intersect, list(nx,ng,np))
-  X=X[idx,]
+  if(dim(X)[2]==1) X=as.matrix(X[idx,],ncol=1) else X=X[idx,]
   y=y[idx]
   Z=Z[idx,]
   
@@ -391,7 +391,7 @@ anteBayesAm =function(op=NULL,y=NULL,Z=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL
     colnames(hyperparameters)=names_hypers
     if(length(names_hypers)>1) names(hyper_est)=names_hypers  
     
-    BAout<-list(betahat=meanmu,ghat=meang, yhat=X0%*%meanmu+Z0%*%meang,
+    BAout<-list(bhat=meanmu,ahat=meang, yhat=X0%*%meanmu+Z0%*%meang,
                 bpvalue=bpvalue,Wprob=Wprob,ante_t=meant,eff_sample=effectiveSize(hyperparameters),
                 hypers=hyperparameters,idx=idx,hyper_est=hyper_est,train=vtrain,y=y0,map=map,win=win,
                 Wchr=chr,GWA=GWA,model=op$model)

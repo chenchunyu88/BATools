@@ -9,12 +9,14 @@ ssBayesE= function(op=NULL,y=NULL,M=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL,Ai
 	g_names=rownames(Ainv)[g_id]
 	ng_names=rownames(Ainv)[-g_id]
 	
+	Ainv=as.matrix(Ainv)
 	
 	Ainv11=Ainv[-g_id,-g_id]
 	Ainv12<-Ainv[-g_id,g_id]
 	
 	rhs=(-1.0)*Ainv12%*%M2
 	M1hat=solve(Ainv11,rhs)
+
 	
   pi_math = 3.14159265359	
 
@@ -427,7 +429,7 @@ ssBayesE= function(op=NULL,y=NULL,M=NULL,X=NULL,vtrain=NULL,GWA=NULL,map=NULL,Ai
 	}
 	save(SNPeff,iter,tvarg,tvare,tvara,thetakeep,varSNP,Cgg,theta,vtrain,file = paste(op$save.at,op$seed,".RData",sep=""))
 	
-   BAout<-list(betahat=betahat,ghat=SNPeff, yhat=yhat,y=y0,y1,y2,train=vtrain,
+   BAout<-list(bhat=betahat,ghat=SNPeff, yhat=yhat,y=y0,y1,y2,train=vtrain,
 	   hyper_est=hyper_est,Cgg=Cgg,varSNP=varSNP,pi_snp=pi_snp,phi_est=phi_est,
 	   iter=iter,sdbeta=sdbeta,model=op$model,df=def,GWA=GWA,win=win,pvalue=pvalue,
 	   zscore=zscore,Wpvalue=Wpvalue,wCh=wCh,map=map,Wchr=chr)

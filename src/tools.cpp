@@ -30,19 +30,19 @@ vec tmp(m);
 res.fill(0);
 I.eye();
 ginv=inv(g);
-Rprintf("Computing Cuu for the animal model \n");
+Rprintf("Starting GWA and computing Cuu for the animal model \n");
 Cuu=ginv*l+I-x*inv(x.t()*x)*x.t();
 Cuu=inv(Cuu)*v(0);
 
 
-Rprintf("Preparing to Compute diagonal of Cgg \n");
+Rprintf("Preparing to Compute diagonal of Caa \n");
 va=g*v(1)-Cuu;
 
 AiVAiZ=ginv*va*ginv*z;
 
 tmp=z.t()*(ginv*u);
 
-Rprintf("Computing diagonal of Cgg \n");
+Rprintf("Computing diagonal of Caa \n");
 for(int j=0;j<m;j++){
   res(0,j)=tmp(j);
   for(int i=0;i<n;i++){
@@ -51,7 +51,7 @@ for(int j=0;j<m;j++){
   }
   
 }
-cout<<"Completed!"<<endl;
+Rprintf("Completed! \n");
 return List::create(Named("gw") = res,
                     Named("AiVAiZ") = AiVAiZ);
 }

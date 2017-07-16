@@ -35,13 +35,14 @@ NULL
 
 #' baFit function can fit various Bayesian models including rrBLUP/GBLUP, BayesA/B, SSVS, single-step SSVS/BayesA/B, antedependence models and etc.
 #' @title Fitting various Bayesian models
+#' @importFrom magrittr %>%
 #' @param formula a formula for the fixed effects
 #' @param data a `data.frame` containing the phenotypes, should have at least two columns including phenotype and id of the individual
 #' @param geno a matrix of genotypes with rownames correpsonds to the id in data
 #' @param genoid a forumla indicating the column of `data` contains the IDs related to genotype
 #' @param randomFormula a formula for random effects 
 #' @param map genomic map with column of chr (chromosome number) and pos (postion); for window based approach idw (window id) is also required. Refer to PigMap in the pig data as an example 
-#' @param PedAinv the inverse of the additive relationship matrix based on pedigree; this is for single-step approach only
+#' @param ped the inverse of the additive relationship matrix based on pedigree; this is for single-step approach only
 #' @param options the `options` object created by `create.options` function to run Bayesian models
 #' @param train a formula indicating the column of `data` as reference for trainning and validation
 #' @param GWA a character of in one of c("No","SNP","GWA") indicating what type of GWA for the model; default is "No"; `map` is required for both "SNP" and "Win"
@@ -66,7 +67,7 @@ NULL
 #' @export
 #' @useDynLib BATools
 baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
-                 PedAinv=NULL,options=NULL,train=NULL,GWA=c("No","SNP","Win")){
+                 ped=NULL,options=NULL,train=NULL,GWA=c("No","SNP","Win")){
   GWA<-match.arg(GWA)
   if(GWA!="No") {
     if(is.null(map)) stop("provide map for GWA")
@@ -100,16 +101,14 @@ baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
   if(is.null(options)) cat("no options inputed, use the default options.\n")
   
   if(substr(options$model,1,2)=="ss" || substr(options$model,5,6)=="ss"){
-    if(is.null(PedAinv)) stop("Inverse of pedigree based additive relationship matrix is required for single-step approach")
-    if(nrow(data)!=nrow(PedAinv)){
-      A=Matrix::solve(PedAinv,sparse=TRUE,tol=1e-16)
-      A=as.matrix(A)
-      colnames(A)=rownames(A)=colnames(PedAinv)
-      A=A[id,id]
-      Ainv=solve(A)
-    }else{
-      Ainv=as.matrix(PedAinv)
-    }
+    if(is.null(ped)) stop("Inverse of pedigree based additive relationship matrix is required for single-step approach")
+    ped2 <- pedigree(sire=ped[,2], dam=ped[,3], label=ped[,1])
+    U <- relfactor(ped2,PigPheno$id)
+    A <- Matrix::crossprod(U)
+    Ainv<-Matrix::solve(A,sparse=T)
+    colnames(Ainv)=rownames(Ainv)=colnames(A)
+    rm(U);rm(A)
+    
     idgeno<-id[which(id %in% rownames(geno))]
     M<-geno[idgeno,]
   }else{
@@ -132,16 +131,18 @@ baFit<-function(formula, data, geno, genoid,randomFormula=NULL,map=NULL,
   X <- model.matrix(formula,data=data)
   rownames(X)=id
   if (!is.null(randomFormula)) {
-    stop("random formula is not implemented yet, contact us for more information")
+    
     reff <- model.frame(randomFormula, data = data, na.action = na.pass)
     reff <- eval(reff, parent.frame())
-    Z<-list()
+    #R<-list()
     if (ncol(reff) == 1) {
-      Z[[1]]=model.matrix(as.formula(paste0("y~0+",colnames(reff)[1])),data=data)
+      #R[[1]]=model.matrix(as.formula(paste0("y~0+",colnames(reff)[1])),data=data)
+      R=model.matrix(as.formula(paste0("y~0+",colnames(reff)[1])),data=data)
     }else {
-      for(i in 1:ncol(reff)){
-        Z[[i]]=model.matrix(as.formula(paste0("y~0+",colnames(reff)[i])),data=data)
-      }
+      #for(i in 1:ncol(reff)){
+      #  R[[i]]=model.matrix(as.formula(paste0("y~0+",colnames(reff)[i])),data=data)
+      #}
+      stop("Only one non-genetic random effect is supported, contact us for more information")
     }
   }else {
     Z=NULL

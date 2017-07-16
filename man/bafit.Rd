@@ -5,8 +5,7 @@
 \title{Fitting various Bayesian models}
 \usage{
 baFit(formula, data, geno, genoid, randomFormula = NULL, map = NULL,
-  PedAinv = NULL, options = NULL, train = NULL, GWA = c("No", "SNP",
-  "Win"))
+  ped = NULL, options = NULL, train = NULL, GWA = c("No", "SNP", "Win"))
 }
 \arguments{
 \item{formula}{a formula for the fixed effects}
@@ -21,7 +20,7 @@ baFit(formula, data, geno, genoid, randomFormula = NULL, map = NULL,
 
 \item{map}{genomic map with column of chr (chromosome number) and pos (postion); for window based approach idw (window id) is also required. Refer to PigMap in the pig data as an example}
 
-\item{PedAinv}{the inverse of the additive relationship matrix based on pedigree; this is for single-step approach only}
+\item{ped}{the inverse of the additive relationship matrix based on pedigree; this is for single-step approach only}
 
 \item{options}{the `options` object created by `create.options` function to run Bayesian models}
 
